@@ -22,9 +22,27 @@ type Tile struct {
 	data [][]float32
 }
 
+func (t *Tile) String() string {
+	return t.bottomLeft.String()
+}
+
+type tileMapEntry struct {
+	path string
+	slot int
+}
+
+type tileCacheEntry struct {
+	timestamp int
+	tile *Tile
+}
+
 type Database struct {
 	path string
 	tileSize osgrid.Distance
+
+	tileMap map[string]tileMapEntry
+	tileCache []tileCacheEntry
+	timestamp int
 }
 
 func parseTileData(r io.Reader) ([][]float32, error) {
@@ -203,6 +221,92 @@ func (d *Database) findTile(ref osgrid.GridRef) (string, error) {
 	return "", fmt.Errorf("Tile %s not found", ref)
 }
 
+func findOldest(cache []tileCacheEntry) int {
+	oldest := 0
+	idx := 0
+
+	for i, entry := range cache {
+		if entry.timestamp <= oldest {
+			oldest = entry.timestamp
+			idx = i
+		}
+	}
+
+	return idx
+}
+
+func (d *Database) hit(slot int) *Tile {
+	tile := d.tileCache[slot].tile
+
+	fmt.Printf("Hit %d -> %s\n", slot, tile.String())
+
+	d.tileCache[slot].timestamp = d.timestamp
+	return tile
+}
+
+func (d *Database) readAllocate(path string) (*Tile, int, error) {
+	tile, err := OpenTile(path)
+	if err != nil {
+		return nil, -1, err
+	}
+
+	slot := findOldest(d.tileCache)
+
+	if d.tileCache[slot].tile != nil {
+		key := d.tileCache[slot].tile.String()
+		evict := d.tileMap[key]
+		evict.slot = -1
+		d.tileMap[key] = evict
+	}
+
+	fmt.Printf("Allocate %s -> %d\n", tile.String(), slot)
+	d.tileCache[slot].timestamp = d.timestamp
+	d.tileCache[slot].tile = tile
+
+	return tile, slot, nil
+}
+
+func (d *Database) GetTile(ref osgrid.GridRef) (*Tile, error) {
+	var tile *Tile
+	var path string
+	var err error
+
+	ref = ref.Align(d.tileSize)
+	key := ref.String()
+
+	d.timestamp++
+
+	slot := -1
+	entry, ok := d.tileMap[key]
+	if ok {
+		path = entry.path
+		if entry.slot >= 0 {
+			// Cache hit
+			slot = entry.slot
+			tile = d.hit(slot)
+		}
+	} else {
+		path, err = d.findTile(ref)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if slot < 0 {
+		tile, slot, err = d.readAllocate(path)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	d.tileMap[key] = tileMapEntry{
+		path: path,
+		slot: slot,
+	}
+
+	return tile, nil
+}
+
 func OpenDatabase(path string, tileSize osgrid.Distance) (*Database, error) {
 	datapath := filepath.Join(path, "data")
 
@@ -217,23 +321,26 @@ func OpenDatabase(path string, tileSize osgrid.Distance) (*Database, error) {
 	d := &Database{
 		path: datapath,
 		tileSize: tileSize,
+		tileMap: make(map[string]tileMapEntry),
+		tileCache: make([]tileCacheEntry, 16),
 	}
 
 	// We assume that London is available in the data-set
 	// TODO: That might be a bad assumption, but good enough for now
 	tq28, _ := osgrid.ParseGridRef("TQ 28")
-	loc, err := d.findTile(tq28)
+
+	tile, err := d.GetTile(tq28)
 	if err != nil {
 		return nil, err
 	}
 
-	t, err := OpenTile(loc)
-	if err != nil {
-		return nil, err
+	if tile.width != tileSize || tile.height != tileSize {
+		return nil, fmt.Errorf("Specified tileSize (%d) doesn't match data (%d)", tileSize, tile.width)
 	}
 
-	if t.width != tileSize || t.height != tileSize {
-		return nil, fmt.Errorf("Specified tileSize (%d) doesn't match data (%d)", tileSize, t.width)
+	_, err = d.GetTile(tq28)
+	if err != nil {
+		return nil, err
 	}
 
 	return d, nil
