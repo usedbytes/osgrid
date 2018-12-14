@@ -14,8 +14,8 @@ const (
 )
 
 type GridRef struct {
-	Tile string
-	Easting, Northing int
+	tile string
+	easting, northing int
 }
 
 const gridChars string = "ABCDEFGHJKLMNOPQRSTUVWXYZ"
@@ -67,16 +67,16 @@ func ParseGridRef(str string) (GridRef, error) {
 	}
 
 	return GridRef{
-		Tile: square,
-		Easting: int(easting * mult),
-		Northing: int(northing * mult),
+		tile: square,
+		easting: int(easting * mult),
+		northing: int(northing * mult),
 	}, nil
 }
 
 func (g GridRef) String() string {
 	digits := 5
 
-	easting, northing := g.Easting, g.Northing;
+	easting, northing := g.easting, g.northing;
 	for {
 	    if easting % 10 != 0 || northing % 10 != 0 || digits == 1 {
 		break;
@@ -84,7 +84,7 @@ func (g GridRef) String() string {
 	    easting, northing, digits = easting / 10, northing / 10, digits - 1
 	}
 
-	return fmt.Sprintf("%s %0*d%0*d", g.Tile, digits, easting, digits, northing)
+	return fmt.Sprintf("%s %0*d%0*d", g.tile, digits, easting, digits, northing)
 }
 
 func (g GridRef) Align(to Distance) GridRef {
@@ -93,8 +93,8 @@ func (g GridRef) Align(to Distance) GridRef {
 	}
 
 	return GridRef{
-		Tile: g.Tile,
-		Easting: (g.Easting / int(to)) * int(to),
-		Northing: (g.Northing / int(to)) * int(to),
+		tile: g.tile,
+		easting: (g.easting / int(to)) * int(to),
+		northing: (g.northing / int(to)) * int(to),
 	}
 }
