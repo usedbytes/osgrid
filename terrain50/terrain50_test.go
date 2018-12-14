@@ -54,9 +54,64 @@ func TestParseASCTile(t *testing.T) {
 	}
 }
 
+func TestTileGet(t *testing.T) {
+	r := strings.NewReader(testASCData)
+	tile, err := ParseASCTile(r)
+	if err != nil {
+		t.Error(err)
+	}
+
+	sv1222, _ := osgrid.ParseGridRef("SV 1222")
+	val, err := tile.Get(sv1222)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if val != 7.0 {
+		t.Errorf("Get: expected %f got %f", 7.0, val)
+	}
+}
+
+/*
 func TestOpenDatabase(t *testing.T) {
 	_, err := OpenDatabase("/aux/data/os_terrain", 10 * osgrid.Kilometre)
 	if err != nil {
 		t.Error(err)
 	}
 }
+
+func TestUseDatabase(t *testing.T) {
+	d, err := OpenDatabase("/aux/data/os_terrain", 10 * osgrid.Kilometre)
+	if err != nil {
+		t.Error(err)
+	}
+
+	ref, _ := osgrid.ParseGridRef("SO 123578")
+	val, err := d.GetData(ref)
+	if err != nil {
+		t.Error(err)
+	}
+	t.Log(ref, val)
+
+	ref, _ = osgrid.ParseGridRef("SO 124579")
+	val, err = d.GetData(ref)
+	if err != nil {
+		t.Error(err)
+	}
+	t.Log(ref, val)
+
+	ref, _ = osgrid.ParseGridRef("SN 124579")
+	val, err = d.GetData(ref)
+	if err != nil {
+		t.Error(err)
+	}
+	t.Log(ref, val)
+
+	ref, _ = osgrid.ParseGridRef("NY 124579")
+	val, err = d.GetData(ref)
+	if err != nil {
+		t.Error(err)
+	}
+	t.Log(ref, val)
+}
+*/

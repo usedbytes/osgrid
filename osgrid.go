@@ -97,9 +97,16 @@ func (g GridRef) Digits() string {
 	return fmt.Sprintf("%0*d%0*d", digits, easting, digits, northing)
 }
 
-
 func (g GridRef) String() string {
 	return fmt.Sprintf("%s %s", g.Tile(), g.Digits())
+}
+
+func (g GridRef) TileEasting() Distance {
+	return g.easting
+}
+
+func (g GridRef) TileNorthing() Distance {
+	return g.northing
 }
 
 func (g GridRef) Align(to Distance) GridRef {

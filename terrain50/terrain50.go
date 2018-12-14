@@ -7,8 +7,9 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"path/filepath"
+	"math"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"strconv"
@@ -24,6 +25,22 @@ type Tile struct {
 
 func (t *Tile) String() string {
 	return t.bottomLeft.String()
+}
+
+func (t *Tile) Get(ref osgrid.GridRef) (float32, error) {
+	if ref.Align(t.width) != t.bottomLeft {
+		return float32(math.NaN()), fmt.Errorf("Coordinate outside tile")
+	}
+
+	ref = ref.Align(t.precision)
+
+	east := ref.TileEasting() - t.bottomLeft.TileEasting()
+	north := ref.TileNorthing() - t.bottomLeft.TileNorthing()
+
+	x := int(east / t.precision)
+	y := int(north / t.precision)
+
+	return t.data[y][x], nil
 }
 
 type tileMapEntry struct {
@@ -238,7 +255,7 @@ func findOldest(cache []tileCacheEntry) int {
 func (d *Database) hit(slot int) *Tile {
 	tile := d.tileCache[slot].tile
 
-	fmt.Printf("Hit %d -> %s\n", slot, tile.String())
+	//fmt.Printf("Hit %d -> %s\n", slot, tile.String())
 
 	d.tileCache[slot].timestamp = d.timestamp
 	return tile
@@ -259,11 +276,22 @@ func (d *Database) readAllocate(path string) (*Tile, int, error) {
 		d.tileMap[key] = evict
 	}
 
-	fmt.Printf("Allocate %s -> %d\n", tile.String(), slot)
+	//fmt.Printf("Allocate %s -> %d (%d)\n", tile.String(), slot, d.timestamp)
+
 	d.tileCache[slot].timestamp = d.timestamp
 	d.tileCache[slot].tile = tile
 
 	return tile, slot, nil
+}
+
+func (d *Database) GetData(ref osgrid.GridRef) (float32, error) {
+
+	tile, err := d.GetTile(ref)
+	if err != nil {
+		return float32(math.NaN()), err
+	}
+
+	return tile.Get(ref)
 }
 
 func (d *Database) GetTile(ref osgrid.GridRef) (*Tile, error) {
@@ -336,11 +364,6 @@ func OpenDatabase(path string, tileSize osgrid.Distance) (*Database, error) {
 
 	if tile.width != tileSize || tile.height != tileSize {
 		return nil, fmt.Errorf("Specified tileSize (%d) doesn't match data (%d)", tileSize, tile.width)
-	}
-
-	_, err = d.GetTile(tq28)
-	if err != nil {
-		return nil, err
 	}
 
 	return d, nil
