@@ -323,6 +323,12 @@ func TestAdd(t *testing.T) {
 	}
 }
 
+func TestExample(t *testing.T) {
+	summit, _ := ParseGridRef("SH 60986 54375")
+	point, _ := summit.Add(300 * Metre, 2 * Kilometre)
+	fmt.Println(point.String())
+}
+
 /*
 func TestDrawGrid(t *testing.T) {
 	origin, _ := ParseGridRef("SV 00")
