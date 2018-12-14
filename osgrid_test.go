@@ -21,6 +21,14 @@ var parseTests []parseTest = []parseTest{
 		},
 	},
 	{
+		str: "ST 001000",
+		ref: GridRef{
+			tile: "ST",
+			easting: 100,
+			northing: 0,
+		},
+	},
+	{
 		str: "ST23",
 		ref: GridRef{
 			tile: "ST",
