@@ -20,6 +20,10 @@ type GridRef struct {
 	easting, northing Distance
 }
 
+func Origin() GridRef {
+	return GridRef{ "SV", 0, 0 }
+}
+
 const gridChars string = "ABCDEFGHJKLMNOPQRSTUVWXYZ"
 const digits string = "0123456789"
 
@@ -75,7 +79,11 @@ func ParseGridRef(str string) (GridRef, error) {
 	}, nil
 }
 
-func (g GridRef) String() string {
+func (g GridRef) Tile() string {
+	return g.tile
+}
+
+func (g GridRef) Digits() string {
 	digits := 5
 
 	easting, northing := g.easting, g.northing;
@@ -86,7 +94,12 @@ func (g GridRef) String() string {
 	    easting, northing, digits = easting / 10, northing / 10, digits - 1
 	}
 
-	return fmt.Sprintf("%s %0*d%0*d", g.tile, digits, easting, digits, northing)
+	return fmt.Sprintf("%0*d%0*d", digits, easting, digits, northing)
+}
+
+
+func (g GridRef) String() string {
+	return fmt.Sprintf("%s %s", g.Tile(), g.Digits())
 }
 
 func (g GridRef) Align(to Distance) GridRef {
