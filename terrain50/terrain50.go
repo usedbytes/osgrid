@@ -27,6 +27,22 @@ func (t *Tile) String() string {
 	return t.bottomLeft.String()
 }
 
+func (t *Tile) GridRef() osgrid.GridRef {
+	return t.bottomLeft
+}
+
+func (t *Tile) Precision() osgrid.Distance {
+	return t.precision
+}
+
+func (t *Tile) Width() osgrid.Distance {
+	return t.width
+}
+
+func (t *Tile) Height() osgrid.Distance {
+	return t.height
+}
+
 func (t *Tile) Get(ref osgrid.GridRef) (float32, error) {
 	if ref.Align(t.width) != t.bottomLeft {
 		return float32(math.NaN()), fmt.Errorf("Coordinate outside tile")
@@ -56,6 +72,7 @@ type tileCacheEntry struct {
 type Database struct {
 	path string
 	tileSize osgrid.Distance
+	precision osgrid.Distance
 
 	tileMap map[string]tileMapEntry
 	tileCache []tileCacheEntry
@@ -335,6 +352,10 @@ func (d *Database) GetTile(ref osgrid.GridRef) (*Tile, error) {
 	return tile, nil
 }
 
+func (d *Database) Precision() osgrid.Distance {
+	return d.precision
+}
+
 func OpenDatabase(path string, tileSize osgrid.Distance) (*Database, error) {
 	datapath := filepath.Join(path, "data")
 
@@ -365,6 +386,8 @@ func OpenDatabase(path string, tileSize osgrid.Distance) (*Database, error) {
 	if tile.width != tileSize || tile.height != tileSize {
 		return nil, fmt.Errorf("Specified tileSize (%d) doesn't match data (%d)", tileSize, tile.width)
 	}
+
+	d.precision = tile.Precision()
 
 	return d, nil
 }
