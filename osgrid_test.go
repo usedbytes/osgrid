@@ -206,3 +206,132 @@ func TestAlign(t *testing.T) {
 		}
 	}
 }
+
+type addTest struct {
+	a, b string
+	east, north Distance
+}
+
+var addTests []addTest = []addTest{
+	{
+		a: "SV 00",
+		b: "SW 00",
+		east  : tileSize,
+		north : 0,
+	},
+	{
+		a: "SV 0000100002",
+		b: "SV 00",
+		east  : -1 * Metre,
+		north : -2 * Metre,
+	},
+	{
+		a: "SV 00",
+		b: "SV 50",
+		east  : tileSize / 2,
+		north : 0,
+	},
+	{
+		a: "NL 00",
+		b: "NN 00",
+		east  : tileSize * 2,
+		north : 0,
+	},
+	{
+		a: "NL 00",
+		b: "OL 00",
+		east  : tileSize * 5,
+		north : 0,
+	},
+	{
+		a: "SO 00",
+		b: "SJ 00",
+		east  : 0,
+		north : tileSize,
+	},
+	{
+		a: "SO 00",
+		b: "NO 00",
+		east  : 0,
+		north : 5 * tileSize,
+	},
+	{
+		a: "SN 1005",
+		b: "OF 050055",
+		east  : 3 * tileSize - 5 * Kilometre,
+		north : 6 * tileSize + 500 * Metre,
+	},
+	{
+		a: "HZ 00",
+		b: "OA 00",
+		east  : tileSize,
+		north : -tileSize,
+	},
+	{
+		a: "NG 00",
+		b: "GZ 00",
+		east  : -2 * tileSize,
+		north : 2 * tileSize,
+	},
+	{
+		a: "NR 00",
+		b: "RE 00",
+		east  : -2 * tileSize,
+		north : -2 * tileSize,
+	},
+	{
+		a: "NJ 00",
+		b: "JV 00",
+		east  : 2 * tileSize,
+		north : 2 * tileSize,
+	},
+	{
+		a: "NT 00",
+		b: "TA 00",
+		east  : 2 * tileSize,
+		north : -2 * tileSize,
+	},
+}
+
+func TestAdd(t *testing.T) {
+	for i, test := range addTests {
+		// A to B
+		a, err := ParseGridRef(test.a)
+		if err != nil {
+			t.Error(i, err)
+		}
+		result, err := a.Add(test.east, test.north)
+		if err != nil {
+			t.Error(i, err)
+		}
+		if result.String() != test.b {
+			t.Errorf("%d Got: %s, Expected: %s\n", i, result, test.b)
+		}
+
+		// B to A
+		b, err := ParseGridRef(test.b)
+		if err != nil {
+			t.Error(i, err)
+		}
+		result, err = b.Add(-test.east, -test.north)
+		if err != nil {
+			t.Error(i, err)
+		}
+		if result.String() != test.a {
+			t.Errorf("%d Got: %s, Expected: %s\n", i, result, test.a)
+		}
+	}
+}
+
+/*
+func TestDrawGrid(t *testing.T) {
+	origin, _ := ParseGridRef("SV 00")
+	for north := Distance(12 * tileSize); north >= 0; north -= tileSize {
+		for east := 0 * Metre; east < 7 * tileSize; east += tileSize {
+			val, _ := origin.Add(east, north)
+			fmt.Printf("%s ", val.String()[:3])
+		}
+		fmt.Println("")
+	}
+}
+*/

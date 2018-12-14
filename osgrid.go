@@ -11,6 +11,8 @@ type Distance int
 const (
 	Metre Distance = 1
 	Kilometre = 1000
+	tileSize  = 100 * Kilometre
+
 )
 
 type GridRef struct {
@@ -97,4 +99,114 @@ func (g GridRef) Align(to Distance) GridRef {
 		easting: (g.easting / to) * to,
 		northing: (g.northing / to) * to,
 	}
+}
+
+func horizontalAdd(idx, add int) (int, bool) {
+	idx += add
+
+	rem := idx % 5
+	if rem < 0 {
+		rem += 5
+	}
+
+	if add > 0 && rem == 0 {
+		idx -= 5
+		return idx, true
+	} else if add < 0 && rem == 4 {
+		idx += 5
+		return idx, true
+	}
+
+	return idx, false
+}
+
+func moveEastWest(tile string, dir int) (string, error) {
+	if len(tile) != 2 {
+		return "", fmt.Errorf("Invalid tile '%s'", tile)
+	}
+
+	first := strings.IndexRune(gridChars, rune(tile[0]))
+	second := strings.IndexRune(gridChars, rune(tile[1]))
+	if first < 0 || second < 0 {
+		return "", fmt.Errorf("Invalid tile '%s'", tile)
+	}
+
+	second, carry := horizontalAdd(second, dir)
+	if carry {
+		first, carry = horizontalAdd(first, dir)
+		if carry {
+			return "", fmt.Errorf("Fell off the edge of the flat world")
+		}
+	}
+
+	return string(gridChars[first]) + string(gridChars[second]), nil
+}
+
+func verticalAdd(idx, add int) (int, bool) {
+	idx += add
+
+	rem := idx % 25
+	if rem < 0 {
+		rem += 25
+	}
+	return rem, (idx >= 25 || idx < 0)
+}
+
+func moveNorthSouth(tile string, dir int) (string, error) {
+	if len(tile) != 2 {
+		return "", fmt.Errorf("Invalid tile '%s'", tile)
+	}
+
+	first := strings.IndexRune(gridChars, rune(tile[0]))
+	second := strings.IndexRune(gridChars, rune(tile[1]))
+	if first < 0 || second < 0 {
+		return "", fmt.Errorf("Invalid tile '%s'", tile)
+	}
+
+	second, carry := verticalAdd(second, dir)
+	if carry {
+		first, carry = verticalAdd(first, dir)
+		if carry {
+			return "", fmt.Errorf("Fell off the edge of the flat world")
+		}
+	}
+
+	return string(gridChars[first]) + string(gridChars[second]), nil
+}
+
+func (g GridRef) Add(east Distance, north Distance) (GridRef, error) {
+	var err error
+
+	g.easting += east
+	g.northing += north
+
+	for ; g.easting >= tileSize; g.easting -= tileSize {
+		g.tile, err = moveEastWest(g.tile, 1)
+		if err != nil {
+			return GridRef{}, err
+		}
+	}
+
+	for ; g.easting < 0; g.easting += tileSize {
+		g.tile, err = moveEastWest(g.tile, -1)
+		if err != nil {
+			return GridRef{}, err
+		}
+	}
+
+	for ; g.northing >= tileSize; g.northing -= tileSize {
+		g.tile, err = moveNorthSouth(g.tile, -5)
+		if err != nil {
+			return GridRef{}, err
+		}
+	}
+
+	for ; g.northing < 0; g.northing += tileSize {
+		g.tile, err = moveNorthSouth(g.tile, 5)
+		if err != nil {
+			return GridRef{}, err
+		}
+	}
+
+	return g, nil
 }
