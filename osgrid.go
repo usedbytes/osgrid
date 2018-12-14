@@ -15,7 +15,7 @@ const (
 
 type GridRef struct {
 	tile string
-	easting, northing int
+	easting, northing Distance
 }
 
 const gridChars string = "ABCDEFGHJKLMNOPQRSTUVWXYZ"
@@ -68,8 +68,8 @@ func ParseGridRef(str string) (GridRef, error) {
 
 	return GridRef{
 		tile: square,
-		easting: int(easting * mult),
-		northing: int(northing * mult),
+		easting: Distance(easting * mult),
+		northing: Distance(northing * mult),
 	}, nil
 }
 
@@ -94,7 +94,7 @@ func (g GridRef) Align(to Distance) GridRef {
 
 	return GridRef{
 		tile: g.tile,
-		easting: (g.easting / int(to)) * int(to),
-		northing: (g.northing / int(to)) * int(to),
+		easting: (g.easting / to) * to,
+		northing: (g.northing / to) * to,
 	}
 }
