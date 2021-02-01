@@ -19,6 +19,7 @@ var outputFile string
 var scadFile string
 var horizontalScale string
 var verticalScale string
+var decimate uint
 
 func init() {
 	const (
@@ -42,6 +43,12 @@ func init() {
 
 		defaultVerticalScale = "1:10000"
 		usageVerticalScale = "Vertical scale (only affects OpenSCAD output)"
+
+		// FIXME: This can slightly mess up the physical size because the
+		// scaling doesn't take into account if the expected size isn't an
+		// exact multiple of 'M'
+		defaultDecimate = 1
+		usageDecimate = "Decimate (only use every M'th sample) to reduce number of points"
 	)
 
 	flag.StringVar(&gridRef, "grid", defaultGridRef, usageGridRef)
@@ -64,6 +71,9 @@ func init() {
 
 	flag.StringVar(&verticalScale, "zscale", defaultVerticalScale, usageVerticalScale)
 	flag.StringVar(&verticalScale, "z", defaultVerticalScale, usageVerticalScale + " (shorthand)")
+
+	flag.UintVar(&decimate, "deciMate", defaultDecimate, usageDecimate)
+	flag.UintVar(&decimate, "M", defaultDecimate, usageDecimate + " (shorthand)")
 }
 
 func main() {
@@ -116,8 +126,8 @@ func main() {
 
 	maxElevation := float32(0.0)
 
-	for north := osgrid.Distance(0); north < osgrid.Distance(radius * 2); north += d.Precision() {
-		for east := osgrid.Distance(0); east < osgrid.Distance(radius * 2); east += d.Precision() {
+	for north := osgrid.Distance(0); north < osgrid.Distance(radius * 2); north += d.Precision() * osgrid.Distance(decimate) {
+		for east := osgrid.Distance(0); east < osgrid.Distance(radius * 2); east += d.Precision() * osgrid.Distance(decimate) {
 			ref, err := bottomLeft.Add(east, north)
 			if err != nil {
 				log.Fatal(err)
