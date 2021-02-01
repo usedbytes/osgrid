@@ -21,10 +21,11 @@ North like so:
 -----------
 
 The Ordnance Survey makes much of their data available for download for free
-from [their website](https://www.ordnancesurvey.co.uk/opendatadownload/products.html).
+from [their website](https://osdatahub.os.uk/downloads/open).
 
-One such dataset is the _Terrain 50_ which provides elevation data, with 0.1 m
-vertical and 50 m horizontal resolution, for the whole of the United Kingdom.
+One such dataset is the [_Terrain 50_](https://osdatahub.os.uk/downloads/open/Terrain50)
+which provides elevation data, with 0.1 m vertical and 50 m horizontal resolution,
+for the whole of the United Kingdom.
 
 The `terrain50` package provides a way to work with this dataset, giving easy
 access to elevation data by grid-reference.
@@ -64,3 +65,6 @@ $ ./surface -d /path/to/terrain_50_data -g SH6098654375 --xyscale 1:100000 --zsc
 ```
 
 ![Snowdon Summit (5 km radius)](surface.png)
+
+> Image above contains OS data © Crown Copyright (2021), used under the
+> [Open Government License](http://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/)
