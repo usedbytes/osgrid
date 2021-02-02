@@ -199,6 +199,57 @@ func main() {
 		},
 	}
 
+	coord := x3d.Scene.Shape.IndexedFaceSet.Coordinate
+	ifs := x3d.Scene.Shape.IndexedFaceSet
+
+	// Add 4 more faces:
+	// Bottom: (0, 0, 0), (eastMax, 0, 0), (eastMax, 0, southMax), (0, 0, southMax)
+	bottomPoints := MFVec3f{
+		{0, 0, 0},
+		{float64(radius * 2) * hScale, 0, 0},
+		{float64(radius * 2) * hScale, 0, float64(radius * 2) * hScale},
+		{0, 0, float64(radius * 2) * hScale},
+	}
+	idx := int32(len(coord.Point))
+	coord.Point = append(coord.Point, bottomPoints...)
+	ifs.CoordIndex = append(ifs.CoordIndex, MFInt32{ idx, idx + 1, idx + 2, idx + 3, -1 }...)
+
+	// North:  (0, 0, 0), [first row of points], (eastMax, 0, 0)
+	//         idx, 0:width, idx+1
+	northFace := MFInt32{ idx }
+	for i := int32(0); i < mesh.Width; i++ {
+		northFace = append(northFace, i)
+	}
+	northFace = append(northFace, MFInt32{ idx+1, -1 }...)
+	ifs.CoordIndex = append(ifs.CoordIndex, northFace...)
+
+	// West:   (0, 0, 0), (0, 0, southMax), [first col of points reversed]
+	//         idx, idx+3, width*(height-1):-width:0
+	westFace := MFInt32{ idx, idx + 3 }
+	for i := mesh.Width*(mesh.Height-1); i >= 0; i-=mesh.Width {
+		westFace = append(westFace, i)
+	}
+	westFace = append(westFace, MFInt32{ -1 }...)
+	ifs.CoordIndex = append(ifs.CoordIndex, westFace...)
+
+	// South:  (0, 0, southMax), (eastMax, 0, southMax), [last row of points reversed]
+	//         idx+3, idx+2, (width*height)-1:-1:width*(height-1)
+	southFace := MFInt32{ idx+3, idx+2 }
+	for i := mesh.Width*mesh.Height-1; i >= mesh.Width*(mesh.Height-1); i-=1 {
+		southFace = append(southFace, i)
+	}
+	southFace = append(southFace, MFInt32{ -1 }...)
+	ifs.CoordIndex = append(ifs.CoordIndex, southFace...)
+
+	// East:   (eastMax, 0, southMax), (eastMax, 0, 0), [last col of points]
+	//         idx+2, idx+1, width-1:width:(width*height)-1
+	eastFace := MFInt32{ idx+2, idx+1 }
+	for i := mesh.Width-1; i < mesh.Width*mesh.Height; i+=mesh.Width {
+		eastFace = append(eastFace, i)
+	}
+	eastFace = append(eastFace, MFInt32{ -1 }...)
+	ifs.CoordIndex = append(ifs.CoordIndex, eastFace...)
+
 	enc := xml.NewEncoder(dataOut)
 	enc.Indent("", "\t")
 
