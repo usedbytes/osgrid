@@ -147,16 +147,21 @@ func main() {
 	log.Printf("HScale: %f\n", hScale)
 	log.Printf("VScale: %f\n", vScale)
 
-	bottomLeft, err := centre.Add(osgrid.Distance(-radius), osgrid.Distance(-radius))
+	topLeft, err := centre.Add(osgrid.Distance(-radius), osgrid.Distance(radius))
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	mesh := &Mesh{ }
 
-	for north := osgrid.Distance(0); north < osgrid.Distance(radius * 2); north += d.Precision() * osgrid.Distance(decimate) {
+	// In x3d coordinate system:
+	// 'x': west -> east
+	// 'y': elevation
+	// 'z': north -> south
+
+	for south := osgrid.Distance(0); south < osgrid.Distance(radius * 2); south += d.Precision() * osgrid.Distance(decimate) {
 		for east := osgrid.Distance(0); east < osgrid.Distance(radius * 2); east += d.Precision() * osgrid.Distance(decimate) {
-			ref, err := bottomLeft.Add(east, north)
+			ref, err := topLeft.Add(east, -south)
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -167,10 +172,10 @@ func main() {
 			}
 
 			mesh.Points = append(mesh.Points, [3]float64{
-					float64(east) * hScale,
-					(float64(val) + float64(zOffset)) * vScale,
-					float64(north) * hScale,
-				})
+				float64(east) * hScale,
+				(float64(val) + float64(zOffset)) * vScale,
+				float64(south) * hScale,
+			})
 		}
 
 		// HAX

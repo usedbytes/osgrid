@@ -84,6 +84,7 @@ type Coordinate struct {
 type Face MFInt32
 
 type Mesh struct {
+	// Points should be ordered in raster scan, top-left to bottom-right
 	Points MFVec3f
 	Width, Height int32
 }
