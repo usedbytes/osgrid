@@ -163,6 +163,11 @@ func main() {
 		Height: (int(radius * 2) / int(inStep)) + 1,
 	}
 
+	baseMesh := &Mesh{
+		Width:  (int(radius * 2) / int(inStep)) + 1,
+		Height: (int(radius * 2) / int(inStep)) + 1,
+	}
+
 	for y := 0; y < mesh.Height; y++ {
 		for x := 0; x < mesh.Width; x++ {
 			ref, err := bottomLeft.Add(osgrid.Distance(x) * inStep, osgrid.Distance(y) * inStep)
@@ -180,6 +185,12 @@ func main() {
 				float64(y) * outStep,
 				(float64(val) + float64(zOffset)) * vScale,
 			})
+
+			baseMesh.Points = append(baseMesh.Points, [3]float64{
+				float64(x) * outStep,
+				float64(y) * outStep,
+				0,
+			})
 		}
 	}
 
@@ -190,7 +201,7 @@ func main() {
 			Shape: &Shape{
 				IndexedFaceSet: &IndexedFaceSet{
 					CCW: true,
-					CoordIndex: mesh.Triangles(),
+					CoordIndex: mesh.Triangles(true),
 					Coordinate: &Coordinate{
 						Point: mesh.Points,
 					},
@@ -199,58 +210,66 @@ func main() {
 		},
 	}
 
-	/*
+
+	// Append the base mesh
 	coord := x3d.Scene.Shape.IndexedFaceSet.Coordinate
 	ifs := x3d.Scene.Shape.IndexedFaceSet
+	firstBaseIdx := len(coord.Point)
 
-	// Add 4 more faces:
-	// Bottom: (0, 0, 0), (eastMax, 0, 0), (eastMax, 0, southMax), (0, 0, southMax)
-	bottomPoints := MFVec3f{
-		{0, 0, 0},
-		{float64(radius * 2) * hScale, 0, 0},
-		{float64(radius * 2) * hScale, 0, float64(radius * 2) * hScale},
-		{0, 0, float64(radius * 2) * hScale},
-	}
-	idx := int32(len(coord.Point))
-	coord.Point = append(coord.Point, bottomPoints...)
-	ifs.CoordIndex = append(ifs.CoordIndex, MFInt32{ idx, idx + 1, idx + 2, idx + 3, -1 }...)
+	coord.Point = append(coord.Point, baseMesh.Points...)
 
-	// North:  (0, 0, 0), [first row of points], (eastMax, 0, 0)
-	//         idx, 0:width, idx+1
-	northFace := MFInt32{ idx }
-	for i := int32(0); i < mesh.Width; i++ {
-		northFace = append(northFace, i)
+	// Note the winding order is set to clockwise, as we want the normals
+	// to be reversed
+	baseIndices := baseMesh.Triangles(false)
+	for i := range baseIndices {
+		val := baseIndices[i]
+		if val != -1 {
+			ifs.CoordIndex = append(ifs.CoordIndex, int32(firstBaseIdx) + val)
+		} else {
+			ifs.CoordIndex = append(ifs.CoordIndex, -1)
+		}
 	}
-	northFace = append(northFace, MFInt32{ idx+1, -1 }...)
-	ifs.CoordIndex = append(ifs.CoordIndex, northFace...)
 
-	// West:   (0, 0, 0), (0, 0, southMax), [first col of points reversed]
-	//         idx, idx+3, width*(height-1):-width:0
-	westFace := MFInt32{ idx, idx + 3 }
-	for i := mesh.Width*(mesh.Height-1); i >= 0; i-=mesh.Width {
-		westFace = append(westFace, i)
-	}
-	westFace = append(westFace, MFInt32{ -1 }...)
-	ifs.CoordIndex = append(ifs.CoordIndex, westFace...)
+	// For each side, build a list of indices for the top and
+	// bottom row of a triangle strip
+	topIdx := make(MFInt32, mesh.Width)
+	bottomIdx := make(MFInt32, mesh.Width)
 
-	// South:  (0, 0, southMax), (eastMax, 0, southMax), [last row of points reversed]
-	//         idx+3, idx+2, (width*height)-1:-1:width*(height-1)
-	southFace := MFInt32{ idx+3, idx+2 }
-	for i := mesh.Width*mesh.Height-1; i >= mesh.Width*(mesh.Height-1); i-=1 {
-		southFace = append(southFace, i)
+	// South face
+	// Base is SW to SE, top is the first row of points
+	firstIdx := 0
+	for i := 0; i < mesh.Width; i++ {
+		topIdx[i] = int32(firstIdx + i)
+		bottomIdx[i] = topIdx[i] + int32(firstBaseIdx)
 	}
-	southFace = append(southFace, MFInt32{ -1 }...)
-	ifs.CoordIndex = append(ifs.CoordIndex, southFace...)
+	ifs.CoordIndex = append(ifs.CoordIndex, MakeTriangleStrip(bottomIdx, topIdx, true)...)
 
-	// East:   (eastMax, 0, southMax), (eastMax, 0, 0), [last col of points]
-	//         idx+2, idx+1, width-1:width:(width*height)-1
-	eastFace := MFInt32{ idx+2, idx+1 }
-	for i := mesh.Width-1; i < mesh.Width*mesh.Height; i+=mesh.Width {
-		eastFace = append(eastFace, i)
+	// North face
+	// Base is NE to NW, top is the last row of points reversed
+	firstIdx = mesh.Width*mesh.Height - 1
+	for i := 0; i < mesh.Width; i++ {
+		topIdx[i] = int32(firstIdx - i)
+		bottomIdx[i] = topIdx[i] + int32(firstBaseIdx)
 	}
-	eastFace = append(eastFace, MFInt32{ -1 }...)
-	ifs.CoordIndex = append(ifs.CoordIndex, eastFace...)
-	*/
+	ifs.CoordIndex = append(ifs.CoordIndex, MakeTriangleStrip(bottomIdx, topIdx, true)...)
+
+	// West face
+	// Base is NW to SW, top is the first column of points reversed
+	firstIdx = mesh.Width * (mesh.Height-1)
+	for i := 0; i < mesh.Height; i++ {
+		topIdx[i] = int32(firstIdx - i * mesh.Width)
+		bottomIdx[i] = topIdx[i] + int32(firstBaseIdx)
+	}
+	ifs.CoordIndex = append(ifs.CoordIndex, MakeTriangleStrip(bottomIdx, topIdx, true)...)
+
+	// East face
+	// Base is SE to NE, top is the last column of points
+	firstIdx = mesh.Width-1
+	for i := 0; i < mesh.Height; i++ {
+		topIdx[i] = int32(firstIdx + i * mesh.Width)
+		bottomIdx[i] = topIdx[i] + int32(firstBaseIdx)
+	}
+	ifs.CoordIndex = append(ifs.CoordIndex, MakeTriangleStrip(bottomIdx, topIdx, true)...)
 
 	enc := xml.NewEncoder(dataOut)
 	enc.Indent("", "\t")

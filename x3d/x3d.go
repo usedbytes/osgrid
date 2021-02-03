@@ -89,7 +89,7 @@ type Mesh struct {
 	Width, Height int
 }
 
-func (m *Mesh) Triangles() MFInt32 {
+func (m *Mesh) Triangles(CCW bool) MFInt32 {
 	// It's (w * 2) - 2 triangles per row, and there's h - 1 rows.
 	// We have to use 4 indices per triangle.
 	faces := make(MFInt32, 0, ((2*m.Width-2)*(m.Height-1)))
@@ -100,8 +100,33 @@ func (m *Mesh) Triangles() MFInt32 {
 
 			v0, v1, v2, v3 := int32(idx), int32(idx + 1), int32(idx + m.Width), int32(idx + m.Width + 1)
 
+			if CCW {
+				faces = append(faces, MFInt32{v0, v1, v3, -1}...)
+				faces = append(faces, MFInt32{v3, v2, v0, -1}...)
+			} else {
+				faces = append(faces, MFInt32{v0, v3, v1, -1}...)
+				faces = append(faces, MFInt32{v0, v2, v3, -1}...)
+			}
+		}
+	}
+
+	return faces
+}
+
+func MakeTriangleStrip(bottom, top MFInt32, CCW bool) MFInt32 {
+	// It's (w * 2) - 2 triangles per row, and here we only have one row.
+	faces := make(MFInt32, 0, 2*len(bottom) - 2)
+
+	for i := 0; i < len(bottom)-1; i++ {
+		v0, v1 := bottom[i], bottom[i+1]
+		v2, v3 := top[i], top[i+1]
+
+		if CCW {
 			faces = append(faces, MFInt32{v0, v1, v3, -1}...)
 			faces = append(faces, MFInt32{v3, v2, v0, -1}...)
+		} else {
+			faces = append(faces, MFInt32{v0, v3, v1, -1}...)
+			faces = append(faces, MFInt32{v0, v2, v3, -1}...)
 		}
 	}
 
