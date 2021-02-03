@@ -185,7 +185,7 @@ func main() {
 
 	x3d := &X3D{
 		Version: 3.2,
-		Profile: "interchange",
+		Profile: "Interchange",
 		Scene: &Scene{
 			Shape: &Shape{
 				IndexedFaceSet: &IndexedFaceSet{
@@ -252,6 +252,23 @@ func main() {
 
 	enc := xml.NewEncoder(dataOut)
 	enc.Indent("", "\t")
+
+	procInst := xml.ProcInst{
+		Target: "xml",
+		Inst:   []byte("version=\"1.0\" encoding=\"UTF-8\""),
+	}
+	err = enc.EncodeToken(procInst)
+	if err != nil {
+		log.Println("ERROR:", err)
+		return
+	}
+
+	dir := xml.Directive("DOCTYPE X3D PUBLIC \"ISO//Web3D//DTD X3D 3.2//EN\" \"https://www.web3d.org/specifications/x3d-3.2.dtd\"")
+	err = enc.EncodeToken(dir)
+	if err != nil {
+		log.Println("ERROR:", err)
+		return
+	}
 
 	err = enc.Encode(x3d)
 	if err != nil {
