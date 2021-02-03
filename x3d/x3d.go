@@ -84,7 +84,7 @@ type Coordinate struct {
 type Face MFInt32
 
 type Mesh struct {
-	// Points should be ordered in raster scan, top-left to bottom-right
+	// Points needs to be ordered bottom-left to top-right
 	Points MFVec3f
 	Width, Height int32
 }
@@ -98,10 +98,10 @@ func (m *Mesh) Triangles() MFInt32 {
 		for x := int32(0); x < m.Width - 1; x++ {
 			idx := int32(y * m.Width + x)
 
-			v0, v1, v2, v3 := idx, idx + m.Width, idx + 1, idx + m.Width + 1
+			v0, v1, v2, v3 := idx, idx + 1, idx + m.Width, idx + m.Width + 1
 
-			faces = append(faces, MFInt32{v0, v1, v2, -1}...)
-			faces = append(faces, MFInt32{v2, v1, v3, -1}...)
+			faces = append(faces, MFInt32{v0, v1, v3, -1}...)
+			faces = append(faces, MFInt32{v3, v2, v0, -1}...)
 		}
 	}
 

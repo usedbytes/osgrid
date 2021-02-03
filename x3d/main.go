@@ -147,21 +147,16 @@ func main() {
 	log.Printf("HScale: %f\n", hScale)
 	log.Printf("VScale: %f\n", vScale)
 
-	topLeft, err := centre.Add(osgrid.Distance(-radius), osgrid.Distance(radius))
+	bottomLeft, err := centre.Add(osgrid.Distance(-radius), osgrid.Distance(-radius))
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	mesh := &Mesh{ }
 
-	// In x3d coordinate system:
-	// 'x': west -> east
-	// 'y': elevation
-	// 'z': north -> south
-
-	for south := osgrid.Distance(0); south < osgrid.Distance(radius * 2); south += d.Precision() * osgrid.Distance(decimate) {
+	for north := osgrid.Distance(0); north < osgrid.Distance(radius * 2); north += d.Precision() * osgrid.Distance(decimate) {
 		for east := osgrid.Distance(0); east < osgrid.Distance(radius * 2); east += d.Precision() * osgrid.Distance(decimate) {
-			ref, err := topLeft.Add(east, -south)
+			ref, err := bottomLeft.Add(east, north)
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -173,8 +168,8 @@ func main() {
 
 			mesh.Points = append(mesh.Points, [3]float64{
 				float64(east) * hScale,
+				float64(north) * hScale,
 				(float64(val) + float64(zOffset)) * vScale,
-				float64(south) * hScale,
 			})
 		}
 
@@ -199,6 +194,7 @@ func main() {
 		},
 	}
 
+	/*
 	coord := x3d.Scene.Shape.IndexedFaceSet.Coordinate
 	ifs := x3d.Scene.Shape.IndexedFaceSet
 
@@ -249,6 +245,7 @@ func main() {
 	}
 	eastFace = append(eastFace, MFInt32{ -1 }...)
 	ifs.CoordIndex = append(ifs.CoordIndex, eastFace...)
+	*/
 
 	enc := xml.NewEncoder(dataOut)
 	enc.Indent("", "\t")
