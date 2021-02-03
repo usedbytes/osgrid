@@ -168,6 +168,12 @@ func main() {
 		Height: (int(radius * 2) / int(inStep)) + 1,
 	}
 
+	texSStep := 1.0 / float64(mesh.Width-1)
+	texTStep := 1.0 / float64(mesh.Height-1)
+
+	texCoord := MFVec2f{}
+	baseTexCoord := MFVec2f{}
+
 	for y := 0; y < mesh.Height; y++ {
 		for x := 0; x < mesh.Width; x++ {
 			ref, err := bottomLeft.Add(osgrid.Distance(x) * inStep, osgrid.Distance(y) * inStep)
@@ -185,12 +191,16 @@ func main() {
 				float64(y) * outStep,
 				(float64(val) + float64(zOffset)) * vScale,
 			})
+			texCoord = append(texCoord, [2]float64{float64(x) * texSStep, float64(y) * texTStep})
 
 			baseMesh.Points = append(baseMesh.Points, [3]float64{
 				float64(x) * outStep,
 				float64(y) * outStep,
 				0,
 			})
+
+			//baseTexCoord = append(baseTexCoord, [2]float64{1.0 - (float64(x) * texSStep), float64(y) * texTStep})
+			baseTexCoord = append(baseTexCoord, [2]float64{1.1, 1.1})
 		}
 	}
 
@@ -199,11 +209,23 @@ func main() {
 		Profile: "Interchange",
 		Scene: &Scene{
 			Shape: &Shape{
+				Appearance: &Appearance{
+					ImageTexture: &ImageTexture{
+						URL: "texture.png",
+						TextureProperties: &TextureProperties{
+							BoundaryModeS: "CLAMP_TO_BOUNDARY",
+							BoundaryModeT: "CLAMP_TO_BOUNDARY",
+						},
+					},
+				},
 				IndexedFaceSet: &IndexedFaceSet{
 					CCW: true,
 					CoordIndex: mesh.Triangles(true),
 					Coordinate: &Coordinate{
 						Point: mesh.Points,
+					},
+					TextureCoordinate: &TextureCoordinate{
+						Point: texCoord,
 					},
 				},
 			},
@@ -217,6 +239,7 @@ func main() {
 	firstBaseIdx := len(coord.Point)
 
 	coord.Point = append(coord.Point, baseMesh.Points...)
+	ifs.TextureCoordinate.Point = append(ifs.TextureCoordinate.Point, baseTexCoord...)
 
 	// Note the winding order is set to clockwise, as we want the normals
 	// to be reversed
