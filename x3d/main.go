@@ -152,11 +152,20 @@ func main() {
 		log.Fatal(err)
 	}
 
-	mesh := &Mesh{ }
+	// Horizontal in the source data
+	inStep := d.Precision() * osgrid.Distance(decimate)
 
-	for north := osgrid.Distance(0); north < osgrid.Distance(radius * 2); north += d.Precision() * osgrid.Distance(decimate) {
-		for east := osgrid.Distance(0); east < osgrid.Distance(radius * 2); east += d.Precision() * osgrid.Distance(decimate) {
-			ref, err := bottomLeft.Add(east, north)
+	// Horizontal step in the X3D file
+	outStep := float64(inStep) * hScale
+
+	mesh := &Mesh{
+		Width:  (int(radius * 2) / int(inStep)) + 1,
+		Height: (int(radius * 2) / int(inStep)) + 1,
+	}
+
+	for y := 0; y < mesh.Height; y++ {
+		for x := 0; x < mesh.Width; x++ {
+			ref, err := bottomLeft.Add(osgrid.Distance(x) * inStep, osgrid.Distance(y) * inStep)
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -167,15 +176,11 @@ func main() {
 			}
 
 			mesh.Points = append(mesh.Points, [3]float64{
-				float64(east) * hScale,
-				float64(north) * hScale,
+				float64(x) * outStep,
+				float64(y) * outStep,
 				(float64(val) + float64(zOffset)) * vScale,
 			})
 		}
-
-		// HAX
-		mesh.Width++
-		mesh.Height++
 	}
 
 	x3d := &X3D{

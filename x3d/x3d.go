@@ -86,19 +86,19 @@ type Face MFInt32
 type Mesh struct {
 	// Points needs to be ordered bottom-left to top-right
 	Points MFVec3f
-	Width, Height int32
+	Width, Height int
 }
 
 func (m *Mesh) Triangles() MFInt32 {
-	// There's len(Points)-2 triangles, and we have to use 4 indices per
-	// triangle.
-	faces := make(MFInt32, 0, (len(m.Points)-2)*4)
+	// It's (w * 2) - 2 triangles per row, and there's h - 1 rows.
+	// We have to use 4 indices per triangle.
+	faces := make(MFInt32, 0, ((2*m.Width-2)*(m.Height-1)))
 
-	for y := int32(0); y < m.Height - 1; y++ {
-		for x := int32(0); x < m.Width - 1; x++ {
-			idx := int32(y * m.Width + x)
+	for y := 0; y < m.Height - 1; y++ {
+		for x := 0; x < m.Width - 1; x++ {
+			idx := y * m.Width + x
 
-			v0, v1, v2, v3 := idx, idx + 1, idx + m.Width, idx + m.Width + 1
+			v0, v1, v2, v3 := int32(idx), int32(idx + 1), int32(idx + m.Width), int32(idx + m.Width + 1)
 
 			faces = append(faces, MFInt32{v0, v1, v3, -1}...)
 			faces = append(faces, MFInt32{v3, v2, v0, -1}...)
