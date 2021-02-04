@@ -20,6 +20,7 @@ var scadFile string
 var horizontalScale string
 var verticalScale string
 var decimate uint
+var zOffset int
 
 func init() {
 	const (
@@ -49,6 +50,9 @@ func init() {
 		// exact multiple of 'M'
 		defaultDecimate = 1
 		usageDecimate = "Decimate (only use every M'th sample) to reduce number of points"
+
+		defaultZOffset = 0
+		usageZOffset = "Amount (in metres) to add or subtract from all values"
 	)
 
 	flag.StringVar(&gridRef, "grid", defaultGridRef, usageGridRef)
@@ -74,6 +78,9 @@ func init() {
 
 	flag.UintVar(&decimate, "deciMate", defaultDecimate, usageDecimate)
 	flag.UintVar(&decimate, "M", defaultDecimate, usageDecimate + " (shorthand)")
+
+	flag.IntVar(&zOffset, "zOffset", defaultZOffset, usageZOffset)
+	flag.IntVar(&zOffset, "Z", defaultZOffset, usageZOffset + " (shorthand)")
 }
 
 func main() {
@@ -138,11 +145,13 @@ func main() {
 				log.Fatal(err)
 			}
 
+			val += float32(zOffset)
+
 			if val > maxElevation {
 				maxElevation = val
 			}
 
-			fmt.Fprintf(dataOut, "%d ", int(val * 10))
+			fmt.Fprintf(dataOut, "%f ", val)
 		}
 		fmt.Fprintln(dataOut, "")
 	}
@@ -160,7 +169,7 @@ func main() {
 		}
 		hDen, err := strconv.Atoi(fields[1])
 		if err != nil {
-			log.Fatalf("Invalid horizontal denominator: %s\n", fields[0])
+			log.Fatalf("Invalid horizontal denominator: %s\n", fields[1])
 		}
 
 		fields = strings.Split(verticalScale, ":")
@@ -173,7 +182,7 @@ func main() {
 		}
 		vDen, err := strconv.Atoi(fields[1])
 		if err != nil {
-			log.Fatalf("Invalid vertical denominator: %s\n", fields[0])
+			log.Fatalf("Invalid vertical denominator: %s\n", fields[1])
 		}
 
 		// OpenSCAD uses millimetres, so multiply by 1000
