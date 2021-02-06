@@ -10,7 +10,7 @@ import (
 	"os"
 
 	"github.com/usedbytes/osgrid"
-	"github.com/usedbytes/osgrid/vector"
+	"github.com/usedbytes/osgrid/raster"
 )
 
 var gridRef string
@@ -57,7 +57,7 @@ func main() {
 		log.Fatal("Output file is required")
 	}
 
-	d, err := vector.OpenDatabase(dataDir, 10 * osgrid.Kilometre)
+	d, err := raster.OpenDatabase(dataDir, 10 * osgrid.Kilometre)
 	if err != nil {
 		log.Fatal(err)
 	}

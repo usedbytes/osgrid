@@ -1,4 +1,4 @@
-package vector
+package raster
 
 import (
 	"encoding/binary"
