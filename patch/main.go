@@ -97,38 +97,92 @@ func main() {
 	pixelWidth := int(math.Round(float64((radius * 2)) / scale))
 	canvas := image.NewRGBA(image.Rect(0, 0, pixelWidth, pixelWidth))
 
-	minX, maxY, err := tile.GetPixelCoord(bottomLeft)
-	blI := tile.Image()
+	drawnMinY := pixelWidth
+	drawnMaxX := 0
 
-	// Assume we need the whole width to start with
-	maxX := blI.Bounds().Dx()
-	// Then check if the right hand edge is actually within this tile
-	tileBr, _ := tile.GridRef().Add(tile.Width(), 0)
-	if tileBr.Tile() == tile.GridRef().Tile() && tileBr.TileEasting() <= bottomRight.TileEasting() {
-		maxX, _, err = tile.GetPixelCoord(bottomRight)
+	rowStart := bottomLeft
+	coord := rowStart
+
+	for drawnMinY > 0 {
+		dy := 0
+
+		for drawnMaxX < pixelWidth {
+			log.Println("drawnMaxX:", drawnMaxX, "pixelWidth:", pixelWidth)
+			log.Println("drawnMinY:", drawnMinY)
+			tile, err = d.GetTile(coord)
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			img := tile.Image()
+
+			log.Println("coord:", coord, "tile:", tile.GridRef())
+
+			// Pixel coordinate of the bottom left of this patch
+			minX, maxY, err := tile.GetPixelCoord(coord)
+			log.Println("minX, maxY:", minX, maxY)
+
+			// How far right can we go within this tile?
+			// Assume we need the whole width to start with
+			maxX := img.Bounds().Dx()
+			// Then check if the right hand edge is actually within this tile
+			tileBottomRight, _ := tile.GridRef().Add(tile.Width(), 0)
+			if tileBottomRight.Tile() == bottomRight.Tile() && tileBottomRight.TileEasting() > bottomRight.TileEasting() {
+				// Find the pixel coordinate of the right edge.
+				eastDistance := bottomRight.TileEasting() - tile.GridRef().TileEasting()
+				regionRightEdge, _ := tile.GridRef().Add(eastDistance, 0)
+
+				maxX, _, err = tile.GetPixelCoord(regionRightEdge)
+				if err != nil {
+					log.Fatalln("bottom right should be in tile:", err)
+				}
+			}
+			log.Println("maxX:", maxX)
+
+			// How far up can we go within this tile?
+			// Assume we need the whole height to start with
+			minY := 0
+			// Then check if the top edge is actually within this tile
+			tileTopRight, _ := tile.GridRef().Add(0, tile.Height())
+			if tileTopRight.Tile() == topRight.Tile() && tileTopRight.TileNorthing() > topRight.TileNorthing() {
+				// Find the pixel coordinate of the top edge.
+				northDistance := topRight.TileNorthing() - tile.GridRef().TileNorthing()
+				regionTopEdge, _ := tile.GridRef().Add(0, northDistance)
+
+				_, minY, err = tile.GetPixelCoord(regionTopEdge)
+				if err != nil {
+					log.Fatalln("top right should be in tile:", err)
+				}
+			}
+			log.Println("minY:", minY)
+
+
+			// Copy Rect(minX, minY, maxX, maxY)
+			dp := image.Pt(drawnMaxX, drawnMinY - (maxY - minY))
+			sr := image.Rect(minX, minY, maxX, maxY)
+			dr := image.Rectangle{dp, dp.Add(sr.Size())}
+			draw.Draw(canvas, dr, img, sr.Min, draw.Src)
+
+			log.Println("copy:", sr, "->", dr)
+
+			drawnMaxX += sr.Size().X
+			dy = sr.Size().Y
+
+			coord, err = tile.GridRef().Add(tile.Width(), coord.TileNorthing() - tile.GridRef().TileNorthing())
+			if err != nil {
+				log.Fatal(err)
+			}
+		}
+
+		// Start the next row
+		drawnMaxX = 0
+		drawnMinY -= dy
+
+		rowStart, err = rowStart.Add(0, tile.Height())
 		if err != nil {
-			log.Fatalln("bottom right should be in tile", err)
+			log.Fatal(err)
 		}
 	}
-
-	// Assume we need the whole height to start with
-	minY := 0
-	// Then check if the top edge is actually within this tile
-	tileTr, _ := tile.GridRef().Add(0, tile.Height())
-	if tileTr.Tile() == tile.GridRef().Tile() && tileTr.TileNorthing() <= topRight.TileEasting() {
-		_, minY, err = tile.GetPixelCoord(topRight)
-		if err != nil {
-			log.Fatalln("top right should be in tile", err)
-		}
-	}
-
-	// Copy Rect(minX, minY, maxX, maxY)
-
-	dp := image.Pt(0, canvas.Bounds().Dy() - (maxY - minY))
-	sr := image.Rect(minX, minY, maxX, maxY)
-	dr := image.Rectangle{dp, sr.Size()}
-
-	draw.Draw(canvas, dr, blI, sr.Min, draw.Src)
 
 	dataOut, err := os.Create(outputFile)
 	if err != nil {
