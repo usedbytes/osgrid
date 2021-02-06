@@ -101,10 +101,12 @@ func main() {
 	drawnMaxX := 0
 
 	rowStart := bottomLeft
-	coord := rowStart
 
 	for drawnMinY > 0 {
 		dy := 0
+
+		log.Println("top rowStart:", rowStart)
+		coord := rowStart
 
 		for drawnMaxX < pixelWidth {
 			log.Println("drawnMaxX:", drawnMaxX, "pixelWidth:", pixelWidth)
@@ -178,10 +180,16 @@ func main() {
 		drawnMaxX = 0
 		drawnMinY -= dy
 
+		//coord, err = tile.GridRef().Add(tile.Width(), coord.TileNorthing() - tile.GridRef().TileNorthing())
 		rowStart, err = rowStart.Add(0, tile.Height())
 		if err != nil {
 			log.Fatal(err)
 		}
+		aligned := rowStart.Align(tile.Height())
+		rowStart, _ = rowStart.Add(0, -(rowStart.TileNorthing() - aligned.TileNorthing()))
+		//rowStart, _ = rowStart.Align(tile.Height()).Add(bottomLeft.TileEasting() - rowStart.TileEasting(), 0)
+		log.Println("New row", drawnMinY)
+		log.Println("New rowStart", rowStart)
 	}
 
 	dataOut, err := os.Create(outputFile)
