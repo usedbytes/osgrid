@@ -9,6 +9,7 @@ import (
 	"math"
 	"os"
 
+	"github.com/nfnt/resize"
 	"github.com/usedbytes/osgrid"
 	"github.com/usedbytes/osgrid/raster"
 )
@@ -95,6 +96,8 @@ func main() {
 	scale := 2.5
 
 	pixelWidth := int(math.Round(float64((radius * 2)) / scale))
+	downScale := 10
+	//pixelWidth /= downScale
 	canvas := image.NewRGBA(image.Rect(0, 0, pixelWidth, pixelWidth))
 
 	drawnMinY := pixelWidth
@@ -111,14 +114,16 @@ func main() {
 		for drawnMaxX < pixelWidth {
 			log.Println("drawnMaxX:", drawnMaxX, "pixelWidth:", pixelWidth)
 			log.Println("drawnMinY:", drawnMinY)
+			log.Println("coord:", coord)
+
 			tile, err = d.GetTile(coord)
 			if err != nil {
-				log.Fatal(err)
+				log.Fatal("GetTile: ", err)
 			}
 
-			img := tile.Image()
+			log.Println("tile:", tile.GridRef())
 
-			log.Println("coord:", coord, "tile:", tile.GridRef())
+			img := tile.Image()
 
 			// Pixel coordinate of the bottom left of this patch
 			minX, maxY, err := tile.GetPixelCoord(coord)
@@ -157,6 +162,12 @@ func main() {
 				}
 			}
 			log.Println("minY:", minY)
+
+			//minX /= downScale
+			//maxX /= downScale
+			//minY /= downScale
+			//maxY /= downScale
+			//img := resize.Resize(img.Bounds().Dx() / downScale, img.Bounds.Dy() / downScale, img, resize.Lanczos3)
 
 
 			// Copy Rect(minX, minY, maxX, maxY)
@@ -198,6 +209,9 @@ func main() {
 	}
 	defer dataOut.Close()
 
-	png.Encode(dataOut, canvas)
+	small := resize.Resize(uint(pixelWidth / downScale), uint(pixelWidth / downScale), canvas, resize.Lanczos3)
+
+	//png.Encode(dataOut, canvas)
+	png.Encode(dataOut, small)
 }
 

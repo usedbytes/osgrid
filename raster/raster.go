@@ -162,7 +162,7 @@ func OpenTile(path string) (*Tile, error) {
 
 	img, _, err := image.Decode(r)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("image.Decode: %v", err)
 	}
 
 	r.Seek(0, 0)
@@ -170,7 +170,7 @@ func OpenTile(path string) (*Tile, error) {
 	// Parse out the tags
 	t, err := tiff.Parse(r, nil, nil)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("tiff.Parse: %v", err)
 	}
 
 	ifds := t.IFDs()
@@ -371,7 +371,7 @@ func OpenDatabase(path string, tileSize osgrid.Distance) (*Database, error) {
 		path: datapath,
 		tileSize: tileSize,
 		tileMap: make(map[string]tileMapEntry),
-		tileCache: make([]tileCacheEntry, 16),
+		tileCache: make([]tileCacheEntry, 1),
 	}
 
 	// We assume that London is available in the data-set
