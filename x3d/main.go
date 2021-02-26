@@ -4,6 +4,7 @@ import (
 	"encoding/xml"
 	"flag"
 	"log"
+	"math"
 	"os"
 	"strings"
 	"strconv"
@@ -173,6 +174,7 @@ func main() {
 
 	texCoord := MFVec2f{}
 	baseTexCoord := MFVec2f{}
+	wallThickness := 5.0
 
 	for y := 0; y < mesh.Height; y++ {
 		for x := 0; x < mesh.Width; x++ {
@@ -186,18 +188,31 @@ func main() {
 				log.Fatal(err)
 			}
 
+			z := (float64(val) + float64(zOffset)) * vScale
+
 			mesh.Points = append(mesh.Points, [3]float64{
 				float64(x) * outStep,
 				float64(y) * outStep,
-				(float64(val) + float64(zOffset)) * vScale,
+				z,
 			})
 			texCoord = append(texCoord, [2]float64{float64(x) * texSStep, float64(y) * texTStep})
 
-			baseMesh.Points = append(baseMesh.Points, [3]float64{
-				float64(x) * outStep,
-				float64(y) * outStep,
-				0,
-			})
+			if (float64(x) * outStep >= wallThickness) &&
+			   (float64(x) * outStep <= (float64(mesh.Width) * outStep) - wallThickness) &&
+			   (float64(y) * outStep >= wallThickness) &&
+			   (float64(y) * outStep <= (float64(mesh.Height) * outStep) - wallThickness) {
+				baseMesh.Points = append(baseMesh.Points, [3]float64{
+					float64(x) * outStep,
+					float64(y) * outStep,
+					math.Max(0, float64(z) - wallThickness),
+				})
+			} else {
+				baseMesh.Points = append(baseMesh.Points, [3]float64{
+					float64(x) * outStep,
+					float64(y) * outStep,
+					0,
+				})
+			}
 
 			//baseTexCoord = append(baseTexCoord, [2]float64{1.0 - (float64(x) * texSStep), float64(y) * texTStep})
 			baseTexCoord = append(baseTexCoord, [2]float64{1.1, 1.1})
