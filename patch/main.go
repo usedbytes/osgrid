@@ -11,6 +11,7 @@ import (
 
 	"github.com/nfnt/resize"
 	"github.com/usedbytes/osgrid"
+	"github.com/usedbytes/osgrid/database"
 	"github.com/usedbytes/osgrid/raster"
 )
 
@@ -87,7 +88,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	tile, err := d.GetTile(bottomLeft)
+	dbtile, err := d.GetTile(bottomLeft)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -116,14 +117,16 @@ func main() {
 			log.Println("drawnMinY:", drawnMinY)
 			log.Println("coord:", coord)
 
-			tile, err = d.GetTile(coord)
+			dbtile, err := d.GetTile(coord)
 			if err != nil {
 				log.Fatal("GetTile: ", err)
 			}
 
-			log.Println("tile:", tile.GridRef())
+			tile := dbtile.(database.ImageTile)
 
-			img := tile.Image()
+			log.Println("tile:", tile.BottomLeft())
+
+			img := tile.GetImage()
 
 			// Pixel coordinate of the bottom left of this patch
 			minX, maxY, err := tile.GetPixelCoord(coord)
@@ -133,11 +136,11 @@ func main() {
 			// Assume we need the whole width to start with
 			maxX := img.Bounds().Dx()
 			// Then check if the right hand edge is actually within this tile
-			tileBottomRight, _ := tile.GridRef().Add(tile.Width(), 0)
+			tileBottomRight, _ := tile.BottomLeft().Add(tile.Width(), 0)
 			if tileBottomRight.Tile() == bottomRight.Tile() && tileBottomRight.TileEasting() > bottomRight.TileEasting() {
 				// Find the pixel coordinate of the right edge.
-				eastDistance := bottomRight.TileEasting() - tile.GridRef().TileEasting()
-				regionRightEdge, _ := tile.GridRef().Add(eastDistance, 0)
+				eastDistance := bottomRight.TileEasting() - tile.BottomLeft().TileEasting()
+				regionRightEdge, _ := tile.BottomLeft().Add(eastDistance, 0)
 
 				maxX, _, err = tile.GetPixelCoord(regionRightEdge)
 				if err != nil {
@@ -150,11 +153,11 @@ func main() {
 			// Assume we need the whole height to start with
 			minY := 0
 			// Then check if the top edge is actually within this tile
-			tileTopRight, _ := tile.GridRef().Add(0, tile.Height())
+			tileTopRight, _ := tile.BottomLeft().Add(0, tile.Height())
 			if tileTopRight.Tile() == topRight.Tile() && tileTopRight.TileNorthing() > topRight.TileNorthing() {
 				// Find the pixel coordinate of the top edge.
-				northDistance := topRight.TileNorthing() - tile.GridRef().TileNorthing()
-				regionTopEdge, _ := tile.GridRef().Add(0, northDistance)
+				northDistance := topRight.TileNorthing() - tile.BottomLeft().TileNorthing()
+				regionTopEdge, _ := tile.BottomLeft().Add(0, northDistance)
 
 				_, minY, err = tile.GetPixelCoord(regionTopEdge)
 				if err != nil {
@@ -181,7 +184,7 @@ func main() {
 			drawnMaxX += sr.Size().X
 			dy = sr.Size().Y
 
-			coord, err = tile.GridRef().Add(tile.Width(), coord.TileNorthing() - tile.GridRef().TileNorthing())
+			coord, err = tile.BottomLeft().Add(tile.Width(), coord.TileNorthing() - tile.BottomLeft().TileNorthing())
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -191,12 +194,12 @@ func main() {
 		drawnMaxX = 0
 		drawnMinY -= dy
 
-		//coord, err = tile.GridRef().Add(tile.Width(), coord.TileNorthing() - tile.GridRef().TileNorthing())
-		rowStart, err = rowStart.Add(0, tile.Height())
+		//coord, err = tile.BottomLeft().Add(tile.Width(), coord.TileNorthing() - tile.BottomLeft().TileNorthing())
+		rowStart, err = rowStart.Add(0, dbtile.Height())
 		if err != nil {
 			log.Fatal(err)
 		}
-		aligned := rowStart.Align(tile.Height())
+		aligned := rowStart.Align(dbtile.Height())
 		rowStart, _ = rowStart.Add(0, -(rowStart.TileNorthing() - aligned.TileNorthing()))
 		//rowStart, _ = rowStart.Align(tile.Height()).Add(bottomLeft.TileEasting() - rowStart.TileEasting(), 0)
 		log.Println("New row", drawnMinY)

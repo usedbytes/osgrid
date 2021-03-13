@@ -10,10 +10,15 @@ import (
 	"path/filepath"
 	"regexp"
 
-	"github.com/usedbytes/osgrid"
 	"github.com/google/tiff"
 	_ "golang.org/x/image/tiff"
+
+	"github.com/usedbytes/osgrid"
+	"github.com/usedbytes/osgrid/database"
 )
+
+var mustBeImageTile database.ImageTile = &Tile{}
+var mustBeImageDatabase database.ImageDatabase = &Database{}
 
 type Tile struct {
 	bottomLeft osgrid.GridRef
@@ -32,6 +37,10 @@ func (t *Tile) GridRef() osgrid.GridRef {
 	return t.bottomLeft
 }
 
+func (t *Tile) BottomLeft() osgrid.GridRef {
+	return t.bottomLeft
+}
+
 func (t *Tile) Precision() osgrid.Distance {
 	return t.precision
 }
@@ -45,6 +54,10 @@ func (t *Tile) Height() osgrid.Distance {
 }
 
 func (t *Tile) Image() image.Image {
+	return t.GetImage()
+}
+
+func (t *Tile) GetImage() image.Image {
 	return t.image
 }
 
@@ -311,7 +324,15 @@ func (d *Database) readAllocate(path string) (*Tile, int, error) {
 	return tile, slot, nil
 }
 
-func (d *Database) GetTile(ref osgrid.GridRef) (*Tile, error) {
+func (d *Database) GetImageTile(ref osgrid.GridRef) (database.ImageTile, error) {
+	return d.getTile(ref)
+}
+
+func (d *Database) GetTile(ref osgrid.GridRef) (database.Tile, error) {
+	return d.getTile(ref)
+}
+
+func (d *Database) getTile(ref osgrid.GridRef) (*Tile, error) {
 	var tile *Tile
 	var path string
 	var err error
