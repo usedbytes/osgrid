@@ -131,7 +131,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	maxElevation := float32(0.0)
+	maxElevation := float64(0.0)
 
 	for north := osgrid.Distance(0); north < osgrid.Distance(radius * 2); north += d.Precision() * osgrid.Distance(decimate) {
 		for east := osgrid.Distance(0); east < osgrid.Distance(radius * 2); east += d.Precision() * osgrid.Distance(decimate) {
@@ -140,12 +140,12 @@ func main() {
 				log.Fatal(err)
 			}
 
-			val, err := d.GetData(ref)
+			val, err := d.GetFloat64(ref)
 			if err != nil {
 				log.Fatal(err)
 			}
 
-			val += float32(zOffset)
+			val += float64(zOffset)
 
 			if val > maxElevation {
 				maxElevation = val
@@ -186,8 +186,8 @@ func main() {
 		}
 
 		// OpenSCAD uses millimetres, so multiply by 1000
-		xSize := float32(radius * 2 * 1000) * float32(hNum) / float32(hDen)
-		zSize := maxElevation * 1000 * float32(vNum) / float32(vDen)
+		xSize := float64(radius * 2 * 1000) * float64(hNum) / float64(hDen)
+		zSize := maxElevation * 1000 * float64(vNum) / float64(vDen)
 
 		fmt.Fprintf(scadOut, "resize([%f, %f, %f]) surface(\"%s\", center = true);\n",
 				xSize, xSize, zSize, outputFile)
