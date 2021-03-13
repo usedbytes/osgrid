@@ -13,8 +13,13 @@ import (
 	"regexp"
 	"strings"
 	"strconv"
+
 	"github.com/usedbytes/osgrid"
+	"github.com/usedbytes/osgrid/database"
 )
+
+var mustBeFloat64Tile database.Float64Tile = &Tile{}
+var mustBeDatabase database.Database = &Database{}
 
 type Tile struct {
 	bottomLeft osgrid.GridRef
@@ -31,6 +36,10 @@ func (t *Tile) GridRef() osgrid.GridRef {
 	return t.bottomLeft
 }
 
+func (t *Tile) BottomLeft() osgrid.GridRef {
+	return t.bottomLeft
+}
+
 func (t *Tile) Precision() osgrid.Distance {
 	return t.precision
 }
@@ -43,9 +52,9 @@ func (t *Tile) Height() osgrid.Distance {
 	return t.height
 }
 
-func (t *Tile) Get(ref osgrid.GridRef) (float32, error) {
+func (t *Tile) GetFloat64(ref osgrid.GridRef) (float64, error) {
 	if ref.Align(t.width) != t.bottomLeft {
-		return float32(math.NaN()), fmt.Errorf("Coordinate outside tile")
+		return float64(math.NaN()), fmt.Errorf("Coordinate outside tile")
 	}
 
 	ref = ref.Align(t.precision)
@@ -56,7 +65,13 @@ func (t *Tile) Get(ref osgrid.GridRef) (float32, error) {
 	x := int(east / t.precision)
 	y := int(north / t.precision)
 
-	return t.data[y][x], nil
+	return float64(t.data[y][x]), nil
+}
+
+func (t *Tile) Get(ref osgrid.GridRef) (float32, error) {
+	f, err := t.GetFloat64(ref)
+
+	return float32(f), err
 }
 
 type tileMapEntry struct {
@@ -301,17 +316,22 @@ func (d *Database) readAllocate(path string) (*Tile, int, error) {
 	return tile, slot, nil
 }
 
-func (d *Database) GetData(ref osgrid.GridRef) (float32, error) {
-
-	tile, err := d.GetTile(ref)
+func (d *Database) GetFloat64(ref osgrid.GridRef) (float64, error) {
+	tile, err := d.getTile(ref)
 	if err != nil {
-		return float32(math.NaN()), err
+		return float64(math.NaN()), err
 	}
 
-	return tile.Get(ref)
+	return tile.GetFloat64(ref)
 }
 
-func (d *Database) GetTile(ref osgrid.GridRef) (*Tile, error) {
+func (d *Database) GetData(ref osgrid.GridRef) (float32, error) {
+	f, err := d.GetFloat64(ref)
+
+	return float32(f), err
+}
+
+func (d *Database) getTile(ref osgrid.GridRef) (*Tile, error) {
 	var tile *Tile
 	var path string
 	var err error
@@ -352,6 +372,12 @@ func (d *Database) GetTile(ref osgrid.GridRef) (*Tile, error) {
 	return tile, nil
 }
 
+func (d *Database) GetTile(ref osgrid.GridRef) (database.Tile, error) {
+	tile, err := d.getTile(ref)
+
+	return tile, err
+}
+
 func (d *Database) Precision() osgrid.Distance {
 	return d.precision
 }
@@ -378,7 +404,7 @@ func OpenDatabase(path string, tileSize osgrid.Distance) (*Database, error) {
 	// TODO: That might be a bad assumption, but good enough for now
 	tq28, _ := osgrid.ParseGridRef("TQ 28")
 
-	tile, err := d.GetTile(tq28)
+	tile, err := d.getTile(tq28)
 	if err != nil {
 		return nil, err
 	}
