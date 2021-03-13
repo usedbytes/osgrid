@@ -15,11 +15,14 @@ type Tile interface {
 }
 
 type Float64Tile interface {
+	Tile
 	GetFloat64(osgrid.GridRef) (float64, error)
 }
 
-type RasterTile interface {
+type ImageTile interface {
+	Tile
 	GetImage() image.Image
+	GetPixelCoord(ref osgrid.GridRef) (int, int, error)
 }
 
 type Database interface {
@@ -28,9 +31,12 @@ type Database interface {
 }
 
 type Float64Database interface {
+	Database
 	GetFloat64(osgrid.GridRef) (float64, error)
+	GetFloat64Tile(osgrid.GridRef) (Float64Tile, error)
 }
 
-type RasterDatabase interface {
-	GetImage() image.Image
+type ImageDatabase interface {
+	Database
+	GetImageTile(osgrid.GridRef) (ImageTile, error)
 }
