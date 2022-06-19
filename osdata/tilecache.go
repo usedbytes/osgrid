@@ -20,6 +20,14 @@ type Cache struct {
 	timestamp int
 	slots     []slot
 	cache     map[osgrid.GridRef]*entry
+	stats     stats
+}
+
+type stats struct {
+	hits int
+	misses int
+	evictions int
+	allocations int
 }
 
 func NewCache(nslots int) *Cache {
@@ -30,7 +38,7 @@ func NewCache(nslots int) *Cache {
 	}
 }
 
-func (c *Cache) Read(ref osgrid.GridRef) (Tile, bool) {
+func (c *Cache) read(ref osgrid.GridRef) (Tile, bool) {
 	if entry, ok := c.cache[ref]; ok {
 		c.timestamp++
 		c.slots[entry.slot].ts = c.timestamp
@@ -38,6 +46,17 @@ func (c *Cache) Read(ref osgrid.GridRef) (Tile, bool) {
 	}
 
 	return nil, false
+}
+
+func (c *Cache) Read(ref osgrid.GridRef) (Tile, bool) {
+	entry, ok := c.read(ref)
+	if ok {
+		c.stats.hits++
+	} else {
+		c.stats.misses++
+	}
+
+	return entry, ok
 }
 
 func (c *Cache) findSlot() int {
@@ -48,12 +67,16 @@ func (c *Cache) findSlot() int {
 		if slot.ref.Tile() == "" {
 			// Always prefer an empty slot
 			idx = i
-			break
-		} else if slot.ts <= oldest {
+			return idx
+		}
+
+		if slot.ts <= oldest {
 			oldest = slot.ts
 			idx = i
 		}
 	}
+
+	c.stats.evictions++
 
 	return idx
 }
@@ -61,7 +84,7 @@ func (c *Cache) findSlot() int {
 func (c *Cache) Allocate(tile Tile) {
 	ref := tile.BottomLeft()
 	// Check we don't already have it
-	if _, ok := c.Read(ref); ok {
+	if _, ok := c.read(ref); ok {
 		return
 	}
 
@@ -77,6 +100,8 @@ func (c *Cache) Allocate(tile Tile) {
 	c.timestamp++
 	slot.ts = c.timestamp
 	slot.ref = ref
+
+	c.stats.allocations++
 }
 
 func (c *Cache) dump() string {
@@ -92,4 +117,9 @@ func (c *Cache) dump() string {
 	}
 
 	return s
+}
+
+func (c *Cache) DumpStats() string {
+	return fmt.Sprintf("Hits: %d, Miss: %d, Allocations: %d, Evictions: %d",
+		c.stats.hits, c.stats.misses, c.stats.allocations, c.stats.evictions)
 }
