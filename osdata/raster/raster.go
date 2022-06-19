@@ -377,7 +377,7 @@ func (d *Database) Precision() osgrid.Distance {
 	return d.precision
 }
 
-func OpenDatabase(path string, tileSize osgrid.Distance) (*Database, error) {
+func OpenDatabase(path string, tileSize osgrid.Distance) (osdata.Database, error) {
 	datapath := filepath.Join(path, "data")
 
 	fi, err := os.Stat(datapath)
