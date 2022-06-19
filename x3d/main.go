@@ -10,7 +10,7 @@ import (
 	"strconv"
 
 	"github.com/usedbytes/osgrid"
-	"github.com/usedbytes/osgrid/terrain50"
+	"github.com/usedbytes/osgrid/osdata/terrain50"
 )
 
 var gridRef string

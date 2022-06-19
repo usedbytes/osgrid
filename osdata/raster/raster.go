@@ -14,11 +14,11 @@ import (
 	_ "golang.org/x/image/tiff"
 
 	"github.com/usedbytes/osgrid"
-	"github.com/usedbytes/osgrid/database"
+	"github.com/usedbytes/osgrid/osdata"
 )
 
-var mustBeImageTile database.ImageTile = &Tile{}
-var mustBeImageDatabase database.ImageDatabase = &Database{}
+var mustBeImageTile osdata.ImageTile = &Tile{}
+var mustBeImageDatabase osdata.ImageDatabase = &Database{}
 
 type Tile struct {
 	bottomLeft osgrid.GridRef
@@ -324,11 +324,11 @@ func (d *Database) readAllocate(path string) (*Tile, int, error) {
 	return tile, slot, nil
 }
 
-func (d *Database) GetImageTile(ref osgrid.GridRef) (database.ImageTile, error) {
+func (d *Database) GetImageTile(ref osgrid.GridRef) (osdata.ImageTile, error) {
 	return d.getTile(ref)
 }
 
-func (d *Database) GetTile(ref osgrid.GridRef) (database.Tile, error) {
+func (d *Database) GetTile(ref osgrid.GridRef) (osdata.Tile, error) {
 	return d.getTile(ref)
 }
 

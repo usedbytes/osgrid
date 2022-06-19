@@ -11,8 +11,8 @@ import (
 
 	"github.com/nfnt/resize"
 	"github.com/usedbytes/osgrid"
-	"github.com/usedbytes/osgrid/database"
-	"github.com/usedbytes/osgrid/raster"
+	"github.com/usedbytes/osgrid/osdata"
+	"github.com/usedbytes/osgrid/osdata/raster"
 )
 
 var gridRef string
@@ -122,7 +122,7 @@ func main() {
 				log.Fatal("GetTile: ", err)
 			}
 
-			tile := dbtile.(database.ImageTile)
+			tile := dbtile.(osdata.ImageTile)
 
 			log.Println("tile:", tile.BottomLeft())
 
