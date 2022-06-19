@@ -19,7 +19,7 @@ import (
 )
 
 var mustBeFloat64Tile osdata.Float64Tile = &Tile{}
-var mustBeDatabase osdata.Database = &Database{}
+var mustBeFloat64Database osdata.Float64Database = &Database{}
 
 type Tile struct {
 	bottomLeft osgrid.GridRef
@@ -74,24 +74,12 @@ func (t *Tile) Get(ref osgrid.GridRef) (float32, error) {
 	return float32(f), err
 }
 
-type tileMapEntry struct {
-	path string
-	slot int
-}
-
-type tileCacheEntry struct {
-	timestamp int
-	tile *Tile
-}
-
 type Database struct {
 	path string
 	tileSize osgrid.Distance
 	precision osgrid.Distance
 
-	tileMap map[string]tileMapEntry
-	tileCache []tileCacheEntry
-	timestamp int
+	cache *osdata.Cache
 }
 
 func parseTileData(r io.Reader) ([][]float32, error) {
@@ -270,52 +258,6 @@ func (d *Database) findTile(ref osgrid.GridRef) (string, error) {
 	return "", fmt.Errorf("Tile %s not found", ref)
 }
 
-func findOldest(cache []tileCacheEntry) int {
-	oldest := 0
-	idx := 0
-
-	for i, entry := range cache {
-		if entry.timestamp <= oldest {
-			oldest = entry.timestamp
-			idx = i
-		}
-	}
-
-	return idx
-}
-
-func (d *Database) hit(slot int) *Tile {
-	tile := d.tileCache[slot].tile
-
-	//fmt.Printf("Hit %d -> %s\n", slot, tile.String())
-
-	d.tileCache[slot].timestamp = d.timestamp
-	return tile
-}
-
-func (d *Database) readAllocate(path string) (*Tile, int, error) {
-	tile, err := OpenTile(path)
-	if err != nil {
-		return nil, -1, err
-	}
-
-	slot := findOldest(d.tileCache)
-
-	if d.tileCache[slot].tile != nil {
-		key := d.tileCache[slot].tile.String()
-		evict := d.tileMap[key]
-		evict.slot = -1
-		d.tileMap[key] = evict
-	}
-
-	//fmt.Printf("Allocate %s -> %d (%d)\n", tile.String(), slot, d.timestamp)
-
-	d.tileCache[slot].timestamp = d.timestamp
-	d.tileCache[slot].tile = tile
-
-	return tile, slot, nil
-}
-
 func (d *Database) GetFloat64(ref osgrid.GridRef) (float64, error) {
 	tile, err := d.getTile(ref)
 	if err != nil {
@@ -332,42 +274,24 @@ func (d *Database) GetData(ref osgrid.GridRef) (float32, error) {
 }
 
 func (d *Database) getTile(ref osgrid.GridRef) (*Tile, error) {
-	var tile *Tile
-	var path string
-	var err error
-
 	ref = ref.Align(d.tileSize)
-	key := ref.String()
 
-	d.timestamp++
-
-	slot := -1
-	entry, ok := d.tileMap[key]
-	if ok {
-		path = entry.path
-		if entry.slot >= 0 {
-			// Cache hit
-			slot = entry.slot
-			tile = d.hit(slot)
-		}
-	} else {
-		path, err = d.findTile(ref)
-		if err != nil {
-			return nil, err
-		}
+	if osdTile, ok := d.cache.Read(ref); ok {
+		// Cache hit
+		return osdTile.(*Tile), nil
 	}
 
-	if slot < 0 {
-		tile, slot, err = d.readAllocate(path)
-		if err != nil {
-			return nil, err
-		}
+	path, err := d.findTile(ref)
+	if err != nil {
+		return nil, err
 	}
 
-	d.tileMap[key] = tileMapEntry{
-		path: path,
-		slot: slot,
+	tile, err := OpenTile(path)
+	if err != nil {
+		return nil, err
 	}
+
+	d.cache.Allocate(tile)
 
 	return tile, nil
 }
@@ -378,11 +302,17 @@ func (d *Database) GetTile(ref osgrid.GridRef) (osdata.Tile, error) {
 	return tile, err
 }
 
+func (d *Database) GetFloat64Tile(ref osgrid.GridRef) (osdata.Float64Tile, error) {
+	tile, err := d.getTile(ref)
+
+	return tile, err
+}
+
 func (d *Database) Precision() osgrid.Distance {
 	return d.precision
 }
 
-func OpenDatabase(path string, tileSize osgrid.Distance) (*Database, error) {
+func OpenDatabase(path string, tileSize osgrid.Distance) (osdata.Float64Database, error) {
 	datapath := filepath.Join(path, "data")
 
 	fi, err := os.Stat(datapath)
@@ -396,8 +326,7 @@ func OpenDatabase(path string, tileSize osgrid.Distance) (*Database, error) {
 	d := &Database{
 		path: datapath,
 		tileSize: tileSize,
-		tileMap: make(map[string]tileMapEntry),
-		tileCache: make([]tileCacheEntry, 16),
+		cache: osdata.NewCache(16),
 	}
 
 	// We assume that London is available in the data-set
@@ -416,4 +345,8 @@ func OpenDatabase(path string, tileSize osgrid.Distance) (*Database, error) {
 	d.precision = tile.Precision()
 
 	return d, nil
+}
+
+func (d *Database) DumpStats() string {
+	return "Cache stats: " + d.cache.DumpStats()
 }

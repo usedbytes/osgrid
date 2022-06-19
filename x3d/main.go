@@ -183,7 +183,7 @@ func main() {
 				log.Fatal(err)
 			}
 
-			val, err := d.GetData(ref)
+			val, err := d.GetFloat64(ref)
 			if err != nil {
 				log.Fatal(err)
 			}
