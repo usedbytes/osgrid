@@ -2,7 +2,6 @@ package tilecache
 
 import (
 	"github.com/usedbytes/osgrid"
-	"github.com/usedbytes/osgrid/database"
 )
 
 type slot struct {
@@ -12,7 +11,7 @@ type slot struct {
 
 type entry struct {
 	slot int
-	tile database.Tile
+	tile osgrid.Tile
 }
 
 type Cache struct {
@@ -30,7 +29,7 @@ func NewCache(nslots int) *Cache {
 	}
 }
 
-func (c *Cache) Read(ref osgrid.GridRef) (database.Tile, bool) {
+func (c *Cache) Read(ref osgrid.GridRef) (osgrid.Tile, bool) {
 	if entry, ok := c.cache[ref]; ok {
 		c.timestamp++
 		c.slots[entry.slot].ts = c.timestamp
@@ -54,7 +53,7 @@ func findOldest(slots []slot) int {
 	return idx
 }
 
-func (c *Cache) Allocate(tile database.Tile) {
+func (c *Cache) Allocate(tile osgrid.Tile) {
 	ref := tile.BottomLeft()
 	// Check we don't already have it
 	if _, ok := c.Read(ref); ok {

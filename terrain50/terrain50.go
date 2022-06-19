@@ -15,11 +15,10 @@ import (
 	"strconv"
 
 	"github.com/usedbytes/osgrid"
-	"github.com/usedbytes/osgrid/database"
 )
 
-var mustBeFloat64Tile database.Float64Tile = &Tile{}
-var mustBeDatabase database.Database = &Database{}
+var mustBeFloat64Tile osgrid.Float64Tile = &Tile{}
+var mustBeDatabase osgrid.Database = &Database{}
 
 type Tile struct {
 	bottomLeft osgrid.GridRef
@@ -372,7 +371,7 @@ func (d *Database) getTile(ref osgrid.GridRef) (*Tile, error) {
 	return tile, nil
 }
 
-func (d *Database) GetTile(ref osgrid.GridRef) (database.Tile, error) {
+func (d *Database) GetTile(ref osgrid.GridRef) (osgrid.Tile, error) {
 	tile, err := d.getTile(ref)
 
 	return tile, err
