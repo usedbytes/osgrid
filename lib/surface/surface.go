@@ -1,6 +1,7 @@
 package surface
 
 import (
+	"fmt"
 	"math"
 
 	"github.com/usedbytes/osgrid"
@@ -8,29 +9,53 @@ import (
 )
 
 type Surface struct {
-	Data     [][]float64
-	Max, Min float64
+	Data       [][]float64
+	Max, Min   float64
+	Resolution osgrid.Distance
+}
+
+type GenerateOpt func(*Surface)
+
+func ResolutionOpt(res osgrid.Distance) GenerateOpt {
+	return func(s *Surface) {
+		s.Resolution = res
+	}
 }
 
 // Note that this will generate one more row/column than you might expect, as
 // points form the corners of regions of the surface, not the centres
 func Generate(db osdata.Float64Database, bottomLeft osgrid.GridRef,
-	width, height osgrid.Distance, optsTODO ...interface{}) (Surface, error) {
+	width, height osgrid.Distance, opts ...GenerateOpt) (Surface, error) {
 
-	// TODO: Different resolutions
-	resolution := db.Precision()
+	surf := Surface{
+		Resolution: db.Precision(),
+	}
 
-	nrows := height / resolution
-	ncols := width / resolution
+	for _, opt := range opts {
+		opt(&surf)
+	}
+
+	if surf.Resolution < db.Precision() {
+		// TODO: This could be relaxed with some extrapolation
+		return Surface{}, fmt.Errorf("Resolution must be at least database precision (%v)", db.Precision())
+	}
+
+	if surf.Resolution%db.Precision() != 0 {
+		// TODO: This could be relaxed with some interpolation
+		return Surface{}, fmt.Errorf("Resolution must be a multiple of database precision (%v)", db.Precision())
+	}
+
+	nrows := height / surf.Resolution
+	ncols := width / surf.Resolution
 	data := make([][]float64, 0, nrows)
 
 	maxElevation := float64(0.0)
 	minElevation := math.MaxFloat64
 
-	for north := osgrid.Distance(0); north <= height; north += resolution {
+	for north := osgrid.Distance(0); north <= height; north += surf.Resolution {
 		row := make([]float64, 0, ncols)
 
-		for east := osgrid.Distance(0); east <= width; east += resolution {
+		for east := osgrid.Distance(0); east <= width; east += surf.Resolution {
 			ref, err := bottomLeft.Add(east, north)
 			if err != nil {
 				return Surface{}, err
@@ -55,9 +80,9 @@ func Generate(db osdata.Float64Database, bottomLeft osgrid.GridRef,
 		data = append(data, row)
 	}
 
-	return Surface{
-		Data: data,
-		Max:  maxElevation,
-		Min:  minElevation,
-	}, nil
+	surf.Data = data
+	surf.Max = maxElevation
+	surf.Min = minElevation
+
+	return surf, nil
 }
