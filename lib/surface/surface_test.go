@@ -35,8 +35,12 @@ func (db *TestDatabase) GetFloat64Tile(ref osgrid.GridRef) (osdata.Float64Tile, 
 
 func TestGenerateSimple(t *testing.T) {
 	db := &TestDatabase{}
+	topLeft, err := osgrid.Origin().Add(0, 100)
+	if err != nil {
+		t.Fatalf("topLeft: %v", err)
+	}
 
-	s, err := Generate(db, osgrid.Origin(), 100*osgrid.Metre, 100*osgrid.Metre)
+	s, err := Generate(db, topLeft, 100*osgrid.Metre, 100*osgrid.Metre)
 	if err != nil {
 		t.Fatalf("Generate failed: %v", err)
 	}
@@ -55,13 +59,15 @@ func TestGenerateSimple(t *testing.T) {
 		t.Errorf("Expected 101 rows, got %v", len(s.Data))
 	}
 
-	for y, row := range s.Data {
+	for y, _ := range s.Data {
+		row := s.Data[len(s.Data)-y-1]
 		if len(row) != 101 {
 			t.Fatalf("Expected 101 cols, got %v", len(row))
 		}
 		for x, v := range row {
-			if v != float64(x+y) {
-				t.Fatalf("(%v, %v) expected %v got %v", x, y, float64(x+y), v)
+			exp := float64(x + y)
+			if v != exp {
+				t.Fatalf("(%v, %v) expected %v got %v", x, y, exp, v)
 			}
 		}
 	}
@@ -69,10 +75,14 @@ func TestGenerateSimple(t *testing.T) {
 
 func TestGenerateResolution(t *testing.T) {
 	db := &TestDatabase{}
+	topLeft, err := osgrid.Origin().Add(0, 100)
+	if err != nil {
+		t.Fatalf("topLeft: %v", err)
+	}
 
 	res := 20 * osgrid.Metre
 
-	s, err := Generate(db, osgrid.Origin(), 100*osgrid.Metre, 100*osgrid.Metre, ResolutionOpt(res))
+	s, err := Generate(db, topLeft, 100*osgrid.Metre, 100*osgrid.Metre, ResolutionOpt(res))
 	if err != nil {
 		t.Fatalf("Generate failed: %v", err)
 	}
@@ -87,7 +97,8 @@ func TestGenerateResolution(t *testing.T) {
 	}
 
 	expCols := (100 / int(res)) + 1
-	for y, row := range s.Data {
+	for y, _ := range s.Data {
+		row := s.Data[len(s.Data)-y-1]
 		if len(row) != expCols {
 			t.Fatalf("Expected %v cols, got %v", expCols, len(row))
 		}
@@ -102,8 +113,12 @@ func TestGenerateResolution(t *testing.T) {
 
 func TestGenerateInvalidResolution(t *testing.T) {
 	db := &TestDatabase{3 * osgrid.Metre}
+	topLeft, err := osgrid.Origin().Add(0, 100)
+	if err != nil {
+		t.Fatalf("topLeft: %v", err)
+	}
 
-	_, err := Generate(db, osgrid.Origin(), 100*osgrid.Metre, 100*osgrid.Metre, ResolutionOpt(20*osgrid.Metre))
+	_, err = Generate(db, topLeft, 100*osgrid.Metre, 100*osgrid.Metre, ResolutionOpt(20*osgrid.Metre))
 	if err == nil {
 		t.Fatal("Generate should have failed with invalid resolution")
 	}
@@ -112,7 +127,7 @@ func TestGenerateInvalidResolution(t *testing.T) {
 		t.Error("wrong error:", err)
 	}
 
-	_, err = Generate(db, osgrid.Origin(), 100*osgrid.Metre, 100*osgrid.Metre, ResolutionOpt(2*osgrid.Metre))
+	_, err = Generate(db, topLeft, 100*osgrid.Metre, 100*osgrid.Metre, ResolutionOpt(2*osgrid.Metre))
 	if err == nil {
 		t.Fatal("Generate should have failed with invalid resolution")
 	}
@@ -175,7 +190,7 @@ func TestSurfaceScale(t *testing.T) {
 		t.Errorf("expected min %v, got %v", newMin, s.Min)
 	}
 
-	orig := 1.1
+	orig := 1.0
 	row := s.Data[0]
 	for i, v := range row {
 		if v != (orig+float64(i))*scale {
