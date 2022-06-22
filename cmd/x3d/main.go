@@ -6,8 +6,8 @@ import (
 	"log"
 	"math"
 	"os"
-	"strings"
 	"strconv"
+	"strings"
 
 	"github.com/usedbytes/osgrid"
 	"github.com/usedbytes/osgrid/osdata/terrain50"
@@ -29,59 +29,59 @@ func init() {
 		defaultGridRef = "SH 60986 54375"
 		usageGridRef   = "Centre point grid reference (Default is Snowdon summit)"
 
-		usageDataDir   = "Database directory (should contain 'data' folder)"
+		usageDataDir = "Database directory (should contain 'data' folder)"
 
 		defaultRadius = 5 * osgrid.Kilometre
 		usageRadius   = "Radius of map (metres)"
 
 		defaultOutput = "-"
-		usageOutput = "Output data file ('-' for stdout)"
+		usageOutput   = "Output data file ('-' for stdout)"
 
 		defaultSCAD = ""
-		usageSCAD = "OpenSCAD output file (output file must be specified)"
+		usageSCAD   = "OpenSCAD output file (output file must be specified)"
 
 		defaultHorizontalScale = "1:100000"
-		usageHorizontalScale = "Horizontal scale (only affects OpenSCAD output)"
+		usageHorizontalScale   = "Horizontal scale (only affects OpenSCAD output)"
 
 		defaultVerticalScale = "1:10000"
-		usageVerticalScale = "Vertical scale (only affects OpenSCAD output)"
+		usageVerticalScale   = "Vertical scale (only affects OpenSCAD output)"
 
 		// FIXME: This can slightly mess up the physical size because the
 		// scaling doesn't take into account if the expected size isn't an
 		// exact multiple of 'M'
 		defaultDecimate = 1
-		usageDecimate = "Decimate (only use every M'th sample) to reduce number of points"
+		usageDecimate   = "Decimate (only use every M'th sample) to reduce number of points"
 
 		defaultZOffset = 0
-		usageZOffset = "Amount (in metres) to add or subtract from all values"
+		usageZOffset   = "Amount (in metres) to add or subtract from all values"
 	)
 
 	flag.StringVar(&gridRef, "grid", defaultGridRef, usageGridRef)
-	flag.StringVar(&gridRef, "g", defaultGridRef, usageGridRef + " (shorthand)")
+	flag.StringVar(&gridRef, "g", defaultGridRef, usageGridRef+" (shorthand)")
 
 	flag.StringVar(&dataDir, "database", "", usageDataDir)
-	flag.StringVar(&dataDir, "d", "", usageDataDir + " (shorthand)")
+	flag.StringVar(&dataDir, "d", "", usageDataDir+" (shorthand)")
 
 	flag.UintVar(&radius, "radius", defaultRadius, usageRadius)
-	flag.UintVar(&radius, "r", defaultRadius, usageRadius + " (shorthand)")
+	flag.UintVar(&radius, "r", defaultRadius, usageRadius+" (shorthand)")
 
 	flag.StringVar(&outputFile, "output", defaultOutput, usageOutput)
-	flag.StringVar(&outputFile, "o", defaultOutput, usageOutput + " (shorthand)")
+	flag.StringVar(&outputFile, "o", defaultOutput, usageOutput+" (shorthand)")
 
 	flag.StringVar(&scadFile, "scad", defaultSCAD, usageSCAD)
-	flag.StringVar(&scadFile, "s", defaultSCAD, usageSCAD + " (shorthand)")
+	flag.StringVar(&scadFile, "s", defaultSCAD, usageSCAD+" (shorthand)")
 
 	flag.StringVar(&horizontalScale, "xyscale", defaultHorizontalScale, usageHorizontalScale)
-	flag.StringVar(&horizontalScale, "x", defaultHorizontalScale, usageHorizontalScale + " (shorthand)")
+	flag.StringVar(&horizontalScale, "x", defaultHorizontalScale, usageHorizontalScale+" (shorthand)")
 
 	flag.StringVar(&verticalScale, "zscale", defaultVerticalScale, usageVerticalScale)
-	flag.StringVar(&verticalScale, "z", defaultVerticalScale, usageVerticalScale + " (shorthand)")
+	flag.StringVar(&verticalScale, "z", defaultVerticalScale, usageVerticalScale+" (shorthand)")
 
 	flag.UintVar(&decimate, "deciMate", defaultDecimate, usageDecimate)
-	flag.UintVar(&decimate, "M", defaultDecimate, usageDecimate + " (shorthand)")
+	flag.UintVar(&decimate, "M", defaultDecimate, usageDecimate+" (shorthand)")
 
 	flag.IntVar(&zOffset, "zOffset", defaultZOffset, usageZOffset)
-	flag.IntVar(&zOffset, "Z", defaultZOffset, usageZOffset + " (shorthand)")
+	flag.IntVar(&zOffset, "Z", defaultZOffset, usageZOffset+" (shorthand)")
 }
 
 func main() {
@@ -93,7 +93,7 @@ func main() {
 		log.Fatal("Database directory is required")
 	}
 
-	d, err := terrain50.OpenDatabase(dataDir, 10 * osgrid.Kilometre)
+	d, err := terrain50.OpenDatabase(dataDir, 10*osgrid.Kilometre)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -160,13 +160,13 @@ func main() {
 	outStep := float64(inStep) * hScale
 
 	mesh := &Mesh{
-		Width:  (int(radius * 2) / int(inStep)) + 1,
-		Height: (int(radius * 2) / int(inStep)) + 1,
+		Width:  (int(radius*2) / int(inStep)) + 1,
+		Height: (int(radius*2) / int(inStep)) + 1,
 	}
 
 	baseMesh := &Mesh{
-		Width:  (int(radius * 2) / int(inStep)) + 1,
-		Height: (int(radius * 2) / int(inStep)) + 1,
+		Width:  (int(radius*2) / int(inStep)) + 1,
+		Height: (int(radius*2) / int(inStep)) + 1,
 	}
 
 	texSStep := 1.0 / float64(mesh.Width-1)
@@ -178,7 +178,7 @@ func main() {
 
 	for y := 0; y < mesh.Height; y++ {
 		for x := 0; x < mesh.Width; x++ {
-			ref, err := bottomLeft.Add(osgrid.Distance(x) * inStep, osgrid.Distance(y) * inStep)
+			ref, err := bottomLeft.Add(osgrid.Distance(x)*inStep, osgrid.Distance(y)*inStep)
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -197,14 +197,14 @@ func main() {
 			})
 			texCoord = append(texCoord, [2]float64{float64(x) * texSStep, float64(y) * texTStep})
 
-			if (float64(x) * outStep >= wallThickness) &&
-			   (float64(x) * outStep <= (float64(mesh.Width) * outStep) - wallThickness) &&
-			   (float64(y) * outStep >= wallThickness) &&
-			   (float64(y) * outStep <= (float64(mesh.Height) * outStep) - wallThickness) {
+			if (float64(x)*outStep >= wallThickness) &&
+				(float64(x)*outStep <= (float64(mesh.Width)*outStep)-wallThickness) &&
+				(float64(y)*outStep >= wallThickness) &&
+				(float64(y)*outStep <= (float64(mesh.Height)*outStep)-wallThickness) {
 				baseMesh.Points = append(baseMesh.Points, [3]float64{
 					float64(x) * outStep,
 					float64(y) * outStep,
-					math.Max(0, float64(z) - wallThickness),
+					math.Max(0, float64(z)-wallThickness),
 				})
 			} else {
 				baseMesh.Points = append(baseMesh.Points, [3]float64{
@@ -234,7 +234,7 @@ func main() {
 					},
 				},
 				IndexedFaceSet: &IndexedFaceSet{
-					CCW: true,
+					CCW:        true,
 					CoordIndex: mesh.Triangles(true),
 					Coordinate: &Coordinate{
 						Point: mesh.Points,
@@ -246,7 +246,6 @@ func main() {
 			},
 		},
 	}
-
 
 	// Append the base mesh
 	coord := x3d.Scene.Shape.IndexedFaceSet.Coordinate
@@ -262,7 +261,7 @@ func main() {
 	for i := range baseIndices {
 		val := baseIndices[i]
 		if val != -1 {
-			ifs.CoordIndex = append(ifs.CoordIndex, int32(firstBaseIdx) + val)
+			ifs.CoordIndex = append(ifs.CoordIndex, int32(firstBaseIdx)+val)
 		} else {
 			ifs.CoordIndex = append(ifs.CoordIndex, -1)
 		}
@@ -293,18 +292,18 @@ func main() {
 
 	// West face
 	// Base is NW to SW, top is the first column of points reversed
-	firstIdx = mesh.Width * (mesh.Height-1)
+	firstIdx = mesh.Width * (mesh.Height - 1)
 	for i := 0; i < mesh.Height; i++ {
-		topIdx[i] = int32(firstIdx - i * mesh.Width)
+		topIdx[i] = int32(firstIdx - i*mesh.Width)
 		bottomIdx[i] = topIdx[i] + int32(firstBaseIdx)
 	}
 	ifs.CoordIndex = append(ifs.CoordIndex, MakeTriangleStrip(bottomIdx, topIdx, true)...)
 
 	// East face
 	// Base is SE to NE, top is the last column of points
-	firstIdx = mesh.Width-1
+	firstIdx = mesh.Width - 1
 	for i := 0; i < mesh.Height; i++ {
-		topIdx[i] = int32(firstIdx + i * mesh.Width)
+		topIdx[i] = int32(firstIdx + i*mesh.Width)
 		bottomIdx[i] = topIdx[i] + int32(firstBaseIdx)
 	}
 	ifs.CoordIndex = append(ifs.CoordIndex, MakeTriangleStrip(bottomIdx, topIdx, true)...)

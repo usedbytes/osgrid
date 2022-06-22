@@ -8,20 +8,20 @@ import (
 )
 
 type Distance int
-const (
-	Metre Distance = 1
-	Kilometre = 1000
-	tileSize  = 100 * Kilometre
 
+const (
+	Metre     Distance = 1
+	Kilometre          = 1000
+	tileSize           = 100 * Kilometre
 )
 
 type GridRef struct {
-	tile string
+	tile              string
 	easting, northing Distance
 }
 
 func Origin() GridRef {
-	return GridRef{ "SV", 0, 0 }
+	return GridRef{"SV", 0, 0}
 }
 
 const gridChars string = "ABCDEFGHJKLMNOPQRSTUVWXYZ"
@@ -56,25 +56,25 @@ func ParseGridRef(str string) (GridRef, error) {
 	if !isNumeric(numeric) {
 		return GridRef{}, fmt.Errorf("Invalid digits '%s'", numeric)
 	}
-	if len(numeric) % 2 != 0 {
+	if len(numeric)%2 != 0 {
 		return GridRef{}, fmt.Errorf("Need an even number of digits '%s'", numeric)
 	}
 
 	diff := 5 - (len(numeric) / 2)
 	mult := math.Pow10(diff)
 
-	easting, err := strconv.ParseFloat(numeric[:len(numeric) / 2], 64)
+	easting, err := strconv.ParseFloat(numeric[:len(numeric)/2], 64)
 	if err != nil {
-		return GridRef{}, fmt.Errorf("Couldn't parse easting '%s'", numeric[:len(numeric) / 2])
+		return GridRef{}, fmt.Errorf("Couldn't parse easting '%s'", numeric[:len(numeric)/2])
 	}
-	northing, err := strconv.ParseFloat(numeric[len(numeric) / 2:], 64)
+	northing, err := strconv.ParseFloat(numeric[len(numeric)/2:], 64)
 	if err != nil {
-		return GridRef{}, fmt.Errorf("Couldn't parse northing '%s'", numeric[len(numeric) / 2:])
+		return GridRef{}, fmt.Errorf("Couldn't parse northing '%s'", numeric[len(numeric)/2:])
 	}
 
 	return GridRef{
-		tile: square,
-		easting: Distance(easting * mult),
+		tile:     square,
+		easting:  Distance(easting * mult),
 		northing: Distance(northing * mult),
 	}, nil
 }
@@ -86,12 +86,12 @@ func (g GridRef) Tile() string {
 func (g GridRef) Digits() string {
 	digits := 5
 
-	easting, northing := g.easting, g.northing;
+	easting, northing := g.easting, g.northing
 	for {
-	    if easting % 10 != 0 || northing % 10 != 0 || digits == 1 {
-		break;
-	    }
-	    easting, northing, digits = easting / 10, northing / 10, digits - 1
+		if easting%10 != 0 || northing%10 != 0 || digits == 1 {
+			break
+		}
+		easting, northing, digits = easting/10, northing/10, digits-1
 	}
 
 	return fmt.Sprintf("%0*d%0*d", digits, easting, digits, northing)
@@ -115,8 +115,8 @@ func (g GridRef) Align(to Distance) GridRef {
 	}
 
 	return GridRef{
-		tile: g.tile,
-		easting: (g.easting / to) * to,
+		tile:     g.tile,
+		easting:  (g.easting / to) * to,
 		northing: (g.northing / to) * to,
 	}
 }

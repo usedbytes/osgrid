@@ -24,9 +24,9 @@ type Cache struct {
 }
 
 type stats struct {
-	hits int
-	misses int
-	evictions int
+	hits        int
+	misses      int
+	evictions   int
 	allocations int
 }
 

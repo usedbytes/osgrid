@@ -15,72 +15,72 @@ var parseTests []parseTest = []parseTest{
 	{
 		str: "ST 00",
 		ref: GridRef{
-			tile: "ST",
-			easting: 0,
+			tile:     "ST",
+			easting:  0,
 			northing: 0,
 		},
 	},
 	{
 		str: "ST 001000",
 		ref: GridRef{
-			tile: "ST",
-			easting: 100,
+			tile:     "ST",
+			easting:  100,
 			northing: 0,
 		},
 	},
 	{
 		str: "ST23",
 		ref: GridRef{
-			tile: "ST",
-			easting: 20000,
+			tile:     "ST",
+			easting:  20000,
 			northing: 30000,
 		},
 	},
 	{
 		str: "ST 001002",
 		ref: GridRef{
-			tile: "ST",
-			easting: 100,
+			tile:     "ST",
+			easting:  100,
 			northing: 200,
 		},
 	},
 	{
 		str: "ST 0000100002",
 		ref: GridRef{
-			tile: "ST",
-			easting: 1,
+			tile:     "ST",
+			easting:  1,
 			northing: 2,
 		},
 	},
 	{
 		str: "OG1256",
 		ref: GridRef{
-			tile: "OG",
-			easting: 12000,
+			tile:     "OG",
+			easting:  12000,
 			northing: 56000,
 		},
 	},
 	{
 		str: "TL123456",
 		ref: GridRef{
-			tile: "TL",
-			easting: 12300,
+			tile:     "TL",
+			easting:  12300,
 			northing: 45600,
 		},
 	},
 	{
 		str: "NT 5432 9876",
 		ref: GridRef{
-			tile: "NT",
-			easting: 54320,
+			tile:     "NT",
+			easting:  54320,
 			northing: 98760,
 		},
 	},
 	{
 		str: "NT 5432198765",
 		ref: GridRef{
-			tile: "NT",
-			easting: 54321,
+			tile:     "NT",
+			easting:  54321,
 			northing: 98765,
 		},
 	},
@@ -110,88 +110,87 @@ func TestFormatGridRef(t *testing.T) {
 	}
 }
 
-
 type roundTest struct {
-	non GridRef
+	non     GridRef
 	aligned GridRef
-	to Distance
+	to      Distance
 }
 
 var roundTests []roundTest = []roundTest{
 	{
 		non: GridRef{
-			tile: "ST",
-			easting: 21000,
+			tile:     "ST",
+			easting:  21000,
 			northing: 34000,
 		},
 		aligned: GridRef{
-			tile: "ST",
-			easting: 20000,
+			tile:     "ST",
+			easting:  20000,
 			northing: 30000,
 		},
 		to: 10 * Kilometre,
 	},
 	{
 		non: GridRef{
-			tile: "ST",
-			easting: 21000,
+			tile:     "ST",
+			easting:  21000,
 			northing: 34000,
 		},
 		aligned: GridRef{
-			tile: "ST",
-			easting: 21000,
+			tile:     "ST",
+			easting:  21000,
 			northing: 34000,
 		},
 		to: 1 * Kilometre,
 	},
 	{
 		non: GridRef{
-			tile: "NT",
-			easting: 54321,
+			tile:     "NT",
+			easting:  54321,
 			northing: 98765,
 		},
 		aligned: GridRef{
-			tile: "NT",
-			easting: 54320,
+			tile:     "NT",
+			easting:  54320,
 			northing: 98760,
 		},
 		to: 10 * Metre,
 	},
 	{
 		non: GridRef{
-			tile: "NT",
-			easting: 54321,
+			tile:     "NT",
+			easting:  54321,
 			northing: 98765,
 		},
 		aligned: GridRef{
-			tile: "NT",
-			easting: 54321,
+			tile:     "NT",
+			easting:  54321,
 			northing: 98765,
 		},
 		to: 1 * Metre,
 	},
 	{
 		non: GridRef{
-			tile: "NT",
-			easting: 54321,
+			tile:     "NT",
+			easting:  54321,
 			northing: 98765,
 		},
 		aligned: GridRef{
-			tile: "NT",
-			easting: 54321,
+			tile:     "NT",
+			easting:  54321,
 			northing: 98765,
 		},
 		to: 0 * Metre,
 	},
 	{
 		non: GridRef{
-			tile: "NT",
-			easting: 54321,
+			tile:     "NT",
+			easting:  54321,
 			northing: 98765,
 		},
 		aligned: GridRef{
-			tile: "NT",
-			easting: 54320,
+			tile:     "NT",
+			easting:  54320,
 			northing: 98764,
 		},
 		to: 2 * Metre,
@@ -208,88 +207,88 @@ func TestAlign(t *testing.T) {
 }
 
 type addTest struct {
-	a, b string
+	a, b        string
 	east, north Distance
 }
 
 var addTests []addTest = []addTest{
 	{
-		a: "SV 00",
-		b: "SW 00",
-		east  : tileSize,
-		north : 0,
+		a:     "SV 00",
+		b:     "SW 00",
+		east:  tileSize,
+		north: 0,
 	},
 	{
-		a: "SV 0000100002",
-		b: "SV 00",
-		east  : -1 * Metre,
-		north : -2 * Metre,
+		a:     "SV 0000100002",
+		b:     "SV 00",
+		east:  -1 * Metre,
+		north: -2 * Metre,
 	},
 	{
-		a: "SV 00",
-		b: "SV 50",
-		east  : tileSize / 2,
-		north : 0,
+		a:     "SV 00",
+		b:     "SV 50",
+		east:  tileSize / 2,
+		north: 0,
 	},
 	{
-		a: "NL 00",
-		b: "NN 00",
-		east  : tileSize * 2,
-		north : 0,
+		a:     "NL 00",
+		b:     "NN 00",
+		east:  tileSize * 2,
+		north: 0,
 	},
 	{
-		a: "NL 00",
-		b: "OL 00",
-		east  : tileSize * 5,
-		north : 0,
+		a:     "NL 00",
+		b:     "OL 00",
+		east:  tileSize * 5,
+		north: 0,
 	},
 	{
-		a: "SO 00",
-		b: "SJ 00",
-		east  : 0,
-		north : tileSize,
+		a:     "SO 00",
+		b:     "SJ 00",
+		east:  0,
+		north: tileSize,
 	},
 	{
-		a: "SO 00",
-		b: "NO 00",
-		east  : 0,
-		north : 5 * tileSize,
+		a:     "SO 00",
+		b:     "NO 00",
+		east:  0,
+		north: 5 * tileSize,
 	},
 	{
-		a: "SN 1005",
-		b: "OF 050055",
-		east  : 3 * tileSize - 5 * Kilometre,
-		north : 6 * tileSize + 500 * Metre,
+		a:     "SN 1005",
+		b:     "OF 050055",
+		east:  3*tileSize - 5*Kilometre,
+		north: 6*tileSize + 500*Metre,
 	},
 	{
-		a: "HZ 00",
-		b: "OA 00",
-		east  : tileSize,
-		north : -tileSize,
+		a:     "HZ 00",
+		b:     "OA 00",
+		east:  tileSize,
+		north: -tileSize,
 	},
 	{
-		a: "NG 00",
-		b: "GZ 00",
-		east  : -2 * tileSize,
-		north : 2 * tileSize,
+		a:     "NG 00",
+		b:     "GZ 00",
+		east:  -2 * tileSize,
+		north: 2 * tileSize,
 	},
 	{
-		a: "NR 00",
-		b: "RE 00",
-		east  : -2 * tileSize,
-		north : -2 * tileSize,
+		a:     "NR 00",
+		b:     "RE 00",
+		east:  -2 * tileSize,
+		north: -2 * tileSize,
 	},
 	{
-		a: "NJ 00",
-		b: "JV 00",
-		east  : 2 * tileSize,
-		north : 2 * tileSize,
+		a:     "NJ 00",
+		b:     "JV 00",
+		east:  2 * tileSize,
+		north: 2 * tileSize,
 	},
 	{
-		a: "NT 00",
-		b: "TA 00",
-		east  : 2 * tileSize,
-		north : -2 * tileSize,
+		a:     "NT 00",
+		b:     "TA 00",
+		east:  2 * tileSize,
+		north: -2 * tileSize,
 	},
 }
 
@@ -325,7 +324,7 @@ func TestAdd(t *testing.T) {
 
 func TestExample(t *testing.T) {
 	summit, _ := ParseGridRef("SH 60986 54375")
-	point, _ := summit.Add(300 * Metre, 2 * Kilometre)
+	point, _ := summit.Add(300*Metre, 2*Kilometre)
 	fmt.Println(point.String())
 }
 

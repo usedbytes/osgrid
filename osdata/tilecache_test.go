@@ -22,7 +22,7 @@ func (tt *TestTile) Precision() osgrid.Distance {
 	return 10 * osgrid.Metre
 }
 
-func (tt *TestTile) BottomLeft() (osgrid.GridRef) {
+func (tt *TestTile) BottomLeft() osgrid.GridRef {
 	return tt.ref
 }
 
@@ -155,12 +155,12 @@ func TestCacheMultiEvict(t *testing.T) {
 	const cacheSize int = 3
 	c := NewCache(cacheSize)
 
-	tiles := make([]Tile, cacheSize * 2)
+	tiles := make([]Tile, cacheSize*2)
 	ref := osgrid.Origin()
 
 	var err error
 	for i := range tiles {
-		ref, err = ref.Add(10 * osgrid.Kilometre, 0)
+		ref, err = ref.Add(10*osgrid.Kilometre, 0)
 		if err != nil {
 			panic(err)
 		}
@@ -168,7 +168,7 @@ func TestCacheMultiEvict(t *testing.T) {
 
 		c.Allocate(tiles[i])
 		if i > cacheSize {
-			_, ok := c.Read(tiles[i - cacheSize - 1].BottomLeft())
+			_, ok := c.Read(tiles[i-cacheSize-1].BottomLeft())
 			if ok {
 				t.Fatalf("should have missed for evicted ref. idx %d", i)
 			}
@@ -180,12 +180,12 @@ func TestCacheMultiEvictOldest(t *testing.T) {
 	const cacheSize int = 3
 	c := NewCache(cacheSize)
 
-	tiles := make([]Tile, cacheSize + 1)
+	tiles := make([]Tile, cacheSize+1)
 	ref := osgrid.Origin()
 
 	var err error
 	for i := range tiles {
-		ref, err = ref.Add(10 * osgrid.Kilometre, 0)
+		ref, err = ref.Add(10*osgrid.Kilometre, 0)
 		if err != nil {
 			panic(err)
 		}

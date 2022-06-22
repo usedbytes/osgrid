@@ -11,7 +11,7 @@ type Tile interface {
 	Height() osgrid.Distance
 	Precision() osgrid.Distance
 
-	BottomLeft() (osgrid.GridRef)
+	BottomLeft() osgrid.GridRef
 	String() string
 }
 

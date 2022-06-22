@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"strings"
 	"strconv"
+	"strings"
 
 	"github.com/usedbytes/osgrid"
 	"github.com/usedbytes/osgrid/osdata/terrain50"
@@ -28,59 +28,59 @@ func init() {
 		defaultGridRef = "SH 60986 54375"
 		usageGridRef   = "Centre point grid reference (Default is Snowdon summit)"
 
-		usageDataDir   = "Database directory (should contain 'data' folder)"
+		usageDataDir = "Database directory (should contain 'data' folder)"
 
 		defaultRadius = 5 * osgrid.Kilometre
 		usageRadius   = "Radius of map (metres)"
 
 		defaultOutput = "-"
-		usageOutput = "Output data file ('-' for stdout)"
+		usageOutput   = "Output data file ('-' for stdout)"
 
 		defaultSCAD = ""
-		usageSCAD = "OpenSCAD output file (output file must be specified)"
+		usageSCAD   = "OpenSCAD output file (output file must be specified)"
 
 		defaultHorizontalScale = "1:100000"
-		usageHorizontalScale = "Horizontal scale (only affects OpenSCAD output)"
+		usageHorizontalScale   = "Horizontal scale (only affects OpenSCAD output)"
 
 		defaultVerticalScale = "1:10000"
-		usageVerticalScale = "Vertical scale (only affects OpenSCAD output)"
+		usageVerticalScale   = "Vertical scale (only affects OpenSCAD output)"
 
 		// FIXME: This can slightly mess up the physical size because the
 		// scaling doesn't take into account if the expected size isn't an
 		// exact multiple of 'M'
 		defaultDecimate = 1
-		usageDecimate = "Decimate (only use every M'th sample) to reduce number of points"
+		usageDecimate   = "Decimate (only use every M'th sample) to reduce number of points"
 
 		defaultZOffset = 0
-		usageZOffset = "Amount (in metres) to add or subtract from all values"
+		usageZOffset   = "Amount (in metres) to add or subtract from all values"
 	)
 
 	flag.StringVar(&gridRef, "grid", defaultGridRef, usageGridRef)
-	flag.StringVar(&gridRef, "g", defaultGridRef, usageGridRef + " (shorthand)")
+	flag.StringVar(&gridRef, "g", defaultGridRef, usageGridRef+" (shorthand)")
 
 	flag.StringVar(&dataDir, "database", "", usageDataDir)
-	flag.StringVar(&dataDir, "d", "", usageDataDir + " (shorthand)")
+	flag.StringVar(&dataDir, "d", "", usageDataDir+" (shorthand)")
 
 	flag.UintVar(&radius, "radius", defaultRadius, usageRadius)
-	flag.UintVar(&radius, "r", defaultRadius, usageRadius + " (shorthand)")
+	flag.UintVar(&radius, "r", defaultRadius, usageRadius+" (shorthand)")
 
 	flag.StringVar(&outputFile, "output", defaultOutput, usageOutput)
-	flag.StringVar(&outputFile, "o", defaultOutput, usageOutput + " (shorthand)")
+	flag.StringVar(&outputFile, "o", defaultOutput, usageOutput+" (shorthand)")
 
 	flag.StringVar(&scadFile, "scad", defaultSCAD, usageSCAD)
-	flag.StringVar(&scadFile, "s", defaultSCAD, usageSCAD + " (shorthand)")
+	flag.StringVar(&scadFile, "s", defaultSCAD, usageSCAD+" (shorthand)")
 
 	flag.StringVar(&horizontalScale, "xyscale", defaultHorizontalScale, usageHorizontalScale)
-	flag.StringVar(&horizontalScale, "x", defaultHorizontalScale, usageHorizontalScale + " (shorthand)")
+	flag.StringVar(&horizontalScale, "x", defaultHorizontalScale, usageHorizontalScale+" (shorthand)")
 
 	flag.StringVar(&verticalScale, "zscale", defaultVerticalScale, usageVerticalScale)
-	flag.StringVar(&verticalScale, "z", defaultVerticalScale, usageVerticalScale + " (shorthand)")
+	flag.StringVar(&verticalScale, "z", defaultVerticalScale, usageVerticalScale+" (shorthand)")
 
 	flag.UintVar(&decimate, "deciMate", defaultDecimate, usageDecimate)
-	flag.UintVar(&decimate, "M", defaultDecimate, usageDecimate + " (shorthand)")
+	flag.UintVar(&decimate, "M", defaultDecimate, usageDecimate+" (shorthand)")
 
 	flag.IntVar(&zOffset, "zOffset", defaultZOffset, usageZOffset)
-	flag.IntVar(&zOffset, "Z", defaultZOffset, usageZOffset + " (shorthand)")
+	flag.IntVar(&zOffset, "Z", defaultZOffset, usageZOffset+" (shorthand)")
 }
 
 func main() {
@@ -90,7 +90,7 @@ func main() {
 		log.Fatal("Database directory is required")
 	}
 
-	d, err := terrain50.OpenDatabase(dataDir, 10 * osgrid.Kilometre)
+	d, err := terrain50.OpenDatabase(dataDir, 10*osgrid.Kilometre)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -133,8 +133,8 @@ func main() {
 
 	maxElevation := float64(0.0)
 
-	for north := osgrid.Distance(0); north < osgrid.Distance(radius * 2); north += d.Precision() * osgrid.Distance(decimate) {
-		for east := osgrid.Distance(0); east < osgrid.Distance(radius * 2); east += d.Precision() * osgrid.Distance(decimate) {
+	for north := osgrid.Distance(0); north < osgrid.Distance(radius*2); north += d.Precision() * osgrid.Distance(decimate) {
+		for east := osgrid.Distance(0); east < osgrid.Distance(radius*2); east += d.Precision() * osgrid.Distance(decimate) {
 			ref, err := bottomLeft.Add(east, north)
 			if err != nil {
 				log.Fatal(err)
@@ -186,10 +186,10 @@ func main() {
 		}
 
 		// OpenSCAD uses millimetres, so multiply by 1000
-		xSize := float64(radius * 2 * 1000) * float64(hNum) / float64(hDen)
+		xSize := float64(radius*2*1000) * float64(hNum) / float64(hDen)
 		zSize := maxElevation * 1000 * float64(vNum) / float64(vDen)
 
 		fmt.Fprintf(scadOut, "resize([%f, %f, %f]) surface(\"%s\", center = true);\n",
-				xSize, xSize, zSize, outputFile)
+			xSize, xSize, zSize, outputFile)
 	}
 }

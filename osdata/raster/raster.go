@@ -3,8 +3,8 @@ package raster
 import (
 	"encoding/binary"
 	"fmt"
-	"io/ioutil"
 	"image"
+	"io/ioutil"
 	"math"
 	"os"
 	"path/filepath"
@@ -21,11 +21,11 @@ var mustBeImageTile osdata.ImageTile = &Tile{}
 var mustBeImageDatabase osdata.ImageDatabase = &Database{}
 
 type Tile struct {
-	bottomLeft osgrid.GridRef
+	bottomLeft    osgrid.GridRef
 	width, height osgrid.Distance
-	precision osgrid.Distance
+	precision     osgrid.Distance
 
-	image image.Image
+	image          image.Image
 	scaleX, scaleY float64
 }
 
@@ -72,7 +72,7 @@ func (t *Tile) GetPixelCoord(ref osgrid.GridRef) (int, int, error) {
 	north := ref.TileNorthing() - t.bottomLeft.TileNorthing()
 
 	x := int(float64(east) / t.scaleX)
-	y := t.image.Bounds().Dy() - int(float64(north) / t.scaleY)
+	y := t.image.Bounds().Dy() - int(float64(north)/t.scaleY)
 
 	return x, y, nil
 }
@@ -84,15 +84,15 @@ type tileMapEntry struct {
 
 type tileCacheEntry struct {
 	timestamp int
-	tile *Tile
+	tile      *Tile
 }
 
 type Database struct {
-	path string
-	tileSize osgrid.Distance
+	path      string
+	tileSize  osgrid.Distance
 	precision osgrid.Distance
 
-	tileMap map[string]tileMapEntry
+	tileMap   map[string]tileMapEntry
 	tileCache []tileCacheEntry
 	timestamp int
 }
@@ -103,7 +103,7 @@ const (
 )
 
 type TiePoint struct {
-	PixX, PixY int
+	PixX, PixY     int
 	ModelX, ModelY int
 }
 
@@ -115,22 +115,22 @@ func (tt *TiePointTag) Decode(data []byte, order binary.ByteOrder) error {
 	numTies := len(data) / (8 * 6)
 
 	// Should be a multiple of 6 doubles
-	if numTies * (8 * 6) != len(data) {
+	if numTies*(8*6) != len(data) {
 		return fmt.Errorf("expected tie point to be multiple of 6 doubles")
 	}
 
 	tps := make([]TiePoint, numTies)
 
 	for i := range tps {
-		u64 := order.Uint64(data[(i * 8 * 6) + (8 * 0):])
+		u64 := order.Uint64(data[(i*8*6)+(8*0):])
 		tps[i].PixX = int(math.Float64frombits(u64))
-		u64 = order.Uint64(data[(i * 8 * 6) + (8 * 1):])
+		u64 = order.Uint64(data[(i*8*6)+(8*1):])
 		tps[i].PixY = int(math.Float64frombits(u64))
 		// Skip K
 
-		u64 = order.Uint64(data[(i * 8 * 6) + (8 * 3):])
+		u64 = order.Uint64(data[(i*8*6)+(8*3):])
 		tps[i].ModelX = int(math.Float64frombits(u64))
-		u64 = order.Uint64(data[(i * 8 * 6) + (8 * 4):])
+		u64 = order.Uint64(data[(i*8*6)+(8*4):])
 		tps[i].ModelY = int(math.Float64frombits(u64))
 		// Skip Z
 	}
@@ -233,20 +233,19 @@ func OpenTile(path string) (*Tile, error) {
 		return nil, fmt.Errorf("tile size must be whole number of metres")
 	}
 
-
 	tile := &Tile{
-		width: osgrid.Distance(widthInMetres) * osgrid.Metre,
+		width:  osgrid.Distance(widthInMetres) * osgrid.Metre,
 		height: osgrid.Distance(heightInMetres) * osgrid.Metre,
 		// FIXME: May need non-integer precision
 		precision: 1,
-		scaleX: scaleTag.ScaleX,
-		scaleY: scaleTag.ScaleY,
-		image: img,
+		scaleX:    scaleTag.ScaleX,
+		scaleY:    scaleTag.ScaleY,
+		image:     img,
 	}
 
 	// Tie point position is top-left, so subtract height
 	tile.bottomLeft, err = osgrid.Origin().Add(osgrid.Distance(tieTag.TiePoints[0].ModelX),
-				osgrid.Distance(tieTag.TiePoints[0].ModelY) - tile.height)
+		osgrid.Distance(tieTag.TiePoints[0].ModelY)-tile.height)
 	if err != nil {
 		return nil, err
 	}
@@ -389,27 +388,27 @@ func OpenDatabase(path string, tileSize osgrid.Distance) (osdata.Database, error
 	}
 
 	d := &Database{
-		path: datapath,
-		tileSize: tileSize,
-		tileMap: make(map[string]tileMapEntry),
+		path:      datapath,
+		tileSize:  tileSize,
+		tileMap:   make(map[string]tileMapEntry),
 		tileCache: make([]tileCacheEntry, 1),
 	}
 
 	// We assume that London is available in the data-set
 	// TODO: That might be a bad assumption, but good enough for now
 	/*
-	tq28, _ := osgrid.ParseGridRef("TQ 28")
+		tq28, _ := osgrid.ParseGridRef("TQ 28")
 
-	tile, err := d.GetTile(tq28)
-	if err != nil {
-		return nil, err
-	}
+		tile, err := d.GetTile(tq28)
+		if err != nil {
+			return nil, err
+		}
 
-	if tile.width != tileSize || tile.height != tileSize {
-		return nil, fmt.Errorf("Specified tileSize (%d) doesn't match data (%d)", tileSize, tile.width)
-	}
+		if tile.width != tileSize || tile.height != tileSize {
+			return nil, fmt.Errorf("Specified tileSize (%d) doesn't match data (%d)", tileSize, tile.width)
+		}
 
-	d.precision = tile.Precision()
+		d.precision = tile.Precision()
 	*/
 	// FIXME!
 	d.precision = 1

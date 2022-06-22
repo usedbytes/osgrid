@@ -3,8 +3,8 @@ package main
 import (
 	"flag"
 	"image"
-	"image/png"
 	"image/draw"
+	"image/png"
 	"log"
 	"math"
 	"os"
@@ -26,26 +26,26 @@ func init() {
 		defaultGridRef = "SH 60986 54375"
 		usageGridRef   = "Centre point grid reference (Default is Snowdon summit)"
 
-		usageDataDir   = "Database directory (should contain 'data' folder)"
+		usageDataDir = "Database directory (should contain 'data' folder)"
 
 		defaultRadius = 5 * osgrid.Kilometre
 		usageRadius   = "Radius of map (metres)"
 
 		defaultOutput = ""
-		usageOutput = "Output data file ('-' for stdout)"
+		usageOutput   = "Output data file ('-' for stdout)"
 	)
 
 	flag.StringVar(&gridRef, "grid", defaultGridRef, usageGridRef)
-	flag.StringVar(&gridRef, "g", defaultGridRef, usageGridRef + " (shorthand)")
+	flag.StringVar(&gridRef, "g", defaultGridRef, usageGridRef+" (shorthand)")
 
 	flag.StringVar(&dataDir, "database", "", usageDataDir)
-	flag.StringVar(&dataDir, "d", "", usageDataDir + " (shorthand)")
+	flag.StringVar(&dataDir, "d", "", usageDataDir+" (shorthand)")
 
 	flag.UintVar(&radius, "radius", defaultRadius, usageRadius)
-	flag.UintVar(&radius, "r", defaultRadius, usageRadius + " (shorthand)")
+	flag.UintVar(&radius, "r", defaultRadius, usageRadius+" (shorthand)")
 
 	flag.StringVar(&outputFile, "output", defaultOutput, usageOutput)
-	flag.StringVar(&outputFile, "o", defaultOutput, usageOutput + " (shorthand)")
+	flag.StringVar(&outputFile, "o", defaultOutput, usageOutput+" (shorthand)")
 }
 
 func main() {
@@ -59,7 +59,7 @@ func main() {
 		log.Fatal("Output file is required")
 	}
 
-	d, err := raster.OpenDatabase(dataDir, 10 * osgrid.Kilometre)
+	d, err := raster.OpenDatabase(dataDir, 10*osgrid.Kilometre)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -172,9 +172,8 @@ func main() {
 			//maxY /= downScale
 			//img := resize.Resize(img.Bounds().Dx() / downScale, img.Bounds.Dy() / downScale, img, resize.Lanczos3)
 
-
 			// Copy Rect(minX, minY, maxX, maxY)
-			dp := image.Pt(drawnMaxX, drawnMinY - (maxY - minY))
+			dp := image.Pt(drawnMaxX, drawnMinY-(maxY-minY))
 			sr := image.Rect(minX, minY, maxX, maxY)
 			dr := image.Rectangle{dp, dp.Add(sr.Size())}
 			draw.Draw(canvas, dr, img, sr.Min, draw.Src)
@@ -184,7 +183,7 @@ func main() {
 			drawnMaxX += sr.Size().X
 			dy = sr.Size().Y
 
-			coord, err = tile.BottomLeft().Add(tile.Width(), coord.TileNorthing() - tile.BottomLeft().TileNorthing())
+			coord, err = tile.BottomLeft().Add(tile.Width(), coord.TileNorthing()-tile.BottomLeft().TileNorthing())
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -212,9 +211,8 @@ func main() {
 	}
 	defer dataOut.Close()
 
-	small := resize.Resize(uint(pixelWidth / downScale), uint(pixelWidth / downScale), canvas, resize.Lanczos3)
+	small := resize.Resize(uint(pixelWidth/downScale), uint(pixelWidth/downScale), canvas, resize.Lanczos3)
 
 	//png.Encode(dataOut, canvas)
 	png.Encode(dataOut, small)
 }
-

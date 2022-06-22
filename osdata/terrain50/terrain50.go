@@ -11,8 +11,8 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
-	"strings"
 	"strconv"
+	"strings"
 
 	"github.com/usedbytes/osgrid"
 	"github.com/usedbytes/osgrid/osdata"
@@ -22,10 +22,10 @@ var mustBeFloat64Tile osdata.Float64Tile = &Tile{}
 var mustBeFloat64Database osdata.Float64Database = &Database{}
 
 type Tile struct {
-	bottomLeft osgrid.GridRef
+	bottomLeft    osgrid.GridRef
 	width, height osgrid.Distance
-	precision osgrid.Distance
-	data [][]float32
+	precision     osgrid.Distance
+	data          [][]float32
 }
 
 func (t *Tile) String() string {
@@ -75,8 +75,8 @@ func (t *Tile) Get(ref osgrid.GridRef) (float32, error) {
 }
 
 type Database struct {
-	path string
-	tileSize osgrid.Distance
+	path      string
+	tileSize  osgrid.Distance
 	precision osgrid.Distance
 
 	cache *osdata.Cache
@@ -107,7 +107,7 @@ func parseTileData(r io.Reader) ([][]float32, error) {
 			// We need to flip the Y axis
 			// The Terrain 50 data is NW to SE
 			// But we want the origin in the bottom-left (SW to NE)
-			vals[nrows - y - 1][x] = float32(floatVal)
+			vals[nrows-y-1][x] = float32(floatVal)
 		}
 	}
 
@@ -122,7 +122,7 @@ func ParseASCTile(r io.Reader) (*Tile, error) {
 	var xllcorner, yllcorner, cellsize osgrid.Distance
 
 	header := true
-	for ; header ; {
+	for header {
 		line, err := buf.ReadString('\n')
 		if err != nil {
 			return nil, err
@@ -199,8 +199,7 @@ func OpenTile(path string) (*Tile, error) {
 	}
 	defer zipFile.Close()
 
-	t := &Tile{
-	}
+	t := &Tile{}
 
 	for _, f := range zipFile.File {
 		if filepath.Ext(f.Name) == ".asc" {
@@ -324,9 +323,9 @@ func OpenDatabase(path string, tileSize osgrid.Distance) (osdata.Float64Database
 	}
 
 	d := &Database{
-		path: datapath,
+		path:     datapath,
 		tileSize: tileSize,
-		cache: osdata.NewCache(16),
+		cache:    osdata.NewCache(16),
 	}
 
 	// We assume that London is available in the data-set

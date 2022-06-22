@@ -32,21 +32,21 @@ func TestParseASCTile(t *testing.T) {
 		t.Errorf("bottomLeft: expected %s, got %s", sv12, tile.bottomLeft)
 	}
 
-	if tile.width != 10 * osgrid.Kilometre {
-		t.Errorf("width: expected %d, got %d", 10 * osgrid.Kilometre, tile.width)
+	if tile.width != 10*osgrid.Kilometre {
+		t.Errorf("width: expected %d, got %d", 10*osgrid.Kilometre, tile.width)
 	}
 
-	if tile.height != 10 * osgrid.Kilometre {
-		t.Errorf("height: expected %d, got %d", 10 * osgrid.Kilometre, tile.height)
+	if tile.height != 10*osgrid.Kilometre {
+		t.Errorf("height: expected %d, got %d", 10*osgrid.Kilometre, tile.height)
 	}
 
-	if tile.precision != 2 * osgrid.Kilometre {
-		t.Errorf("precision: expected %d, got %d", 2 * osgrid.Kilometre, tile.precision)
+	if tile.precision != 2*osgrid.Kilometre {
+		t.Errorf("precision: expected %d, got %d", 2*osgrid.Kilometre, tile.precision)
 	}
 
 	for i, row := range tile.data {
 		for j, v := range row {
-			expect := float32(i * len(row) + j + 1)
+			expect := float32(i*len(row) + j + 1)
 			if v != expect {
 				t.Errorf("(%d, %d): Expected %f, got %f\n", j, i, expect, v)
 			}
