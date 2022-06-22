@@ -2,11 +2,15 @@ package main
 
 import (
 	"fmt"
+	"image"
+	"image/color"
+	"image/png"
 	"io"
 	"os"
 	"path"
 	"strings"
 
+	"github.com/mandykoh/prism/srgb"
 	"github.com/urfave/cli/v2"
 
 	"github.com/usedbytes/osgrid"
@@ -25,6 +29,24 @@ type surfaceConfig struct {
 	formatter   SurfaceFormatter
 }
 
+func writeSurfaceImage(w io.Writer, s *surface.Surface, encoder func(io.Writer, image.Image) error, applysRGB bool) error {
+	gray := image.NewGray16(image.Rect(0, 0, len(s.Data), len(s.Data[0])))
+	scale := 65535.0 / (s.Max - s.Min)
+
+	for y, row := range s.Data {
+		for x, v := range row {
+			pix := color.Gray16{uint16((v - s.Min) * scale)}
+			gray.SetGray16(x, y, pix)
+		}
+	}
+
+	if applysRGB {
+		srgb.EncodeImage(gray, gray, 2)
+	}
+
+	return encoder(w, gray)
+}
+
 func surfaceFormatterFromFormat(format string, c *cli.Context) (SurfaceFormatter, error) {
 	switch format {
 	case "txt":
@@ -35,6 +57,10 @@ func surfaceFormatterFromFormat(format string, c *cli.Context) (SurfaceFormatter
 		return func(w io.Writer, s *surface.Surface) error { return writeSurfaceSV(w, s, "\t") }, nil
 	case "dat":
 		return func(w io.Writer, s *surface.Surface) error { return writeSurfaceSV(w, s, " ") }, nil
+	case "png":
+		return func(w io.Writer, s *surface.Surface) error {
+			return writeSurfaceImage(w, s, png.Encode, c.Bool("srgb"))
+		}, nil
 	default:
 		return nil, fmt.Errorf("unknown format: %s", format)
 	}
@@ -158,6 +184,14 @@ func sepFlag() *cli.StringFlag {
 	}
 }
 
+func srgbFlag() *cli.BoolFlag {
+	return &cli.BoolFlag{
+		Name:  "srgb",
+		Usage: "sRGB encode image output",
+		Value: false,
+	}
+}
+
 var surfaceCmd cli.Command = cli.Command{
 	Name: "surface",
 	Usage: "Generate a surface from elevation data\n" +
@@ -169,6 +203,7 @@ var surfaceCmd cli.Command = cli.Command{
 		formatsFlag([]string{"csv", "dat", "tsv", "txt"}),
 		outfileFlag(),
 		sepFlag(),
+		srgbFlag(),
 		widthFlag(),
 	},
 	Action: runSurface,
