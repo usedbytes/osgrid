@@ -61,7 +61,7 @@ func Generate(db osdata.Float64Database, bottomLeft osgrid.GridRef,
 	}
 
 	if surf.Resolution < db.Precision() {
-		// TODO: This could be relaxed with some extrapolation
+		// TODO: This could be relaxed with some interpolation
 		return Surface{}, fmt.Errorf("Resolution must be at least database precision (%v)", db.Precision())
 	}
 
