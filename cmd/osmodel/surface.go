@@ -21,14 +21,6 @@ import (
 
 type SurfaceFormatter func(io.Writer, *surface.Surface) error
 
-type surfaceConfig struct {
-	elevationDB osdata.Float64Database
-	width       osgrid.Distance
-	outFile     io.WriteCloser
-	gridRef     osgrid.GridRef
-	formatter   SurfaceFormatter
-}
-
 func writeSurfaceImage(w io.Writer, s *surface.Surface, encoder func(io.Writer, image.Image) error, applysRGB bool) error {
 	gray := image.NewGray16(image.Rect(0, 0, len(s.Data), len(s.Data[0])))
 	scale := 65535.0 / (s.Max - s.Min)
@@ -45,6 +37,29 @@ func writeSurfaceImage(w io.Writer, s *surface.Surface, encoder func(io.Writer, 
 	}
 
 	return encoder(w, gray)
+}
+
+func writeSurfaceSV(w io.Writer, s *surface.Surface, sep string) error {
+	bld := &strings.Builder{}
+	for _, row := range s.Data {
+		for i, v := range row {
+			bld.WriteString(fmt.Sprintf("%v", v))
+			if i < len(row)-1 {
+				bld.WriteString(sep)
+			}
+		}
+		bld.WriteString("\n")
+
+		n, err := io.WriteString(w, bld.String())
+		if err != nil {
+			return err
+		} else if n != bld.Len() {
+			return fmt.Errorf("short write")
+		}
+		bld.Reset()
+	}
+
+	return nil
 }
 
 func surfaceFormatterFromFormat(format string, c *cli.Context) (SurfaceFormatter, error) {
@@ -66,6 +81,15 @@ func surfaceFormatterFromFormat(format string, c *cli.Context) (SurfaceFormatter
 	}
 }
 
+type surfaceConfig struct {
+	elevationDB osdata.Float64Database
+	width       osgrid.Distance
+	outFile     io.WriteCloser
+	gridRef     osgrid.GridRef
+	formatter   SurfaceFormatter
+	opts        []surface.GenerateOpt
+}
+
 func parseSurfaceArgs(c *cli.Context) (surfaceConfig, error) {
 	var cfg surfaceConfig
 	var err error
@@ -85,6 +109,11 @@ func parseSurfaceArgs(c *cli.Context) (surfaceConfig, error) {
 	cfg.elevationDB, err = terrain50.OpenDatabase(c.String("elevation"), 10*osgrid.Kilometre)
 	if err != nil {
 		return surfaceConfig{}, fmt.Errorf("opening elevation database: %w", err)
+	}
+
+	// hres
+	if c.IsSet("hres") {
+		cfg.opts = append(cfg.opts, surface.ResolutionOpt(osgrid.Distance(c.Uint("hres"))))
 	}
 
 	// GRID_REFERENCE
@@ -131,29 +160,6 @@ func parseSurfaceArgs(c *cli.Context) (surfaceConfig, error) {
 	return cfg, nil
 }
 
-func writeSurfaceSV(w io.Writer, s *surface.Surface, sep string) error {
-	bld := &strings.Builder{}
-	for _, row := range s.Data {
-		for i, v := range row {
-			bld.WriteString(fmt.Sprintf("%v", v))
-			if i < len(row)-1 {
-				bld.WriteString(sep)
-			}
-		}
-		bld.WriteString("\n")
-
-		n, err := io.WriteString(w, bld.String())
-		if err != nil {
-			return err
-		} else if n != bld.Len() {
-			return fmt.Errorf("short write")
-		}
-		bld.Reset()
-	}
-
-	return nil
-}
-
 func runSurface(c *cli.Context) error {
 	cfg, err := parseSurfaceArgs(c)
 	if err != nil {
@@ -166,7 +172,7 @@ func runSurface(c *cli.Context) error {
 		return fmt.Errorf("map bounds: %w", err)
 	}
 
-	surface, err := surface.Generate(cfg.elevationDB, bottomLeft, cfg.width, cfg.width)
+	surface, err := surface.Generate(cfg.elevationDB, bottomLeft, cfg.width, cfg.width, cfg.opts...)
 	if err != nil {
 		return fmt.Errorf("generating surface: %w", err)
 	}
@@ -201,6 +207,7 @@ var surfaceCmd cli.Command = cli.Command{
 	Flags: []cli.Flag{
 		elevationFlag(),
 		formatsFlag([]string{"csv", "dat", "tsv", "txt"}),
+		hresFlag(),
 		outfileFlag(),
 		sepFlag(),
 		srgbFlag(),

@@ -33,6 +33,14 @@ func elevationFlag() *cli.StringFlag {
 	}
 }
 
+func hresFlag() *cli.UintFlag {
+	return &cli.UintFlag{
+		Name:        "hres",
+		Usage:       "Output horizontal `RESOLUTION` for elevation data, in metres",
+		DefaultText: "source elevation data resolution",
+	}
+}
+
 func formatsFlag(formats []string) *cli.StringFlag {
 	return &cli.StringFlag{
 		Name:        "format",
