@@ -121,3 +121,65 @@ func TestGenerateInvalidResolution(t *testing.T) {
 		t.Error("wrong error:", err)
 	}
 }
+
+func TestSurfaceAdjustMax(t *testing.T) {
+	s := Surface{
+		Data: [][]float64{
+			{1.0, 2.0, 3.0, 4.0},
+		},
+		Max:        4.0,
+		Min:        1.0,
+		Resolution: 1 * osgrid.Metre,
+	}
+
+	newMax := 5.0
+	s.AdjustMax(newMax)
+
+	if s.Max != newMax {
+		t.Errorf("expected max %v, got %v", newMax, s.Max)
+	}
+
+	if s.Min != (s.Max - 3.0) {
+		t.Errorf("expected min %v, got %v", s.Max-3.0, s.Min)
+	}
+
+	exp := 2.0
+	row := s.Data[0]
+	for i, v := range row {
+		if v != exp+float64(i) {
+			t.Errorf("idx %v, expected %v, got %v", i, exp+float64(i), v)
+		}
+	}
+}
+
+func TestSurfaceScale(t *testing.T) {
+	s := Surface{
+		Data: [][]float64{
+			{1.0, 2.0, 3.0, 4.0},
+		},
+		Max:        4.0,
+		Min:        1.0,
+		Resolution: 1 * osgrid.Metre,
+	}
+
+	scale := 1.25
+	newMax := s.Max * scale
+	newMin := s.Min * scale
+	s.Scale(scale)
+
+	if s.Max != newMax {
+		t.Errorf("expected max %v, got %v", newMax, s.Max)
+	}
+
+	if s.Min != newMin {
+		t.Errorf("expected min %v, got %v", newMin, s.Min)
+	}
+
+	orig := 1.1
+	row := s.Data[0]
+	for i, v := range row {
+		if v != (orig+float64(i))*scale {
+			t.Errorf("idx %v, expected %v, got %v", i, (orig+float64(i))*scale, v)
+		}
+	}
+}

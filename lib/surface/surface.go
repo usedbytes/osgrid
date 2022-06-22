@@ -14,6 +14,31 @@ type Surface struct {
 	Resolution osgrid.Distance
 }
 
+// Adjust the surface points so that 'max' becomes the new Max value
+func (s *Surface) AdjustMax(max float64) {
+	adjust := max - s.Max
+	for _, row := range s.Data {
+		for i, _ := range row {
+			row[i] += adjust
+		}
+	}
+
+	s.Min += adjust
+	s.Max = max
+}
+
+// Multiply all the points in the surface by scale
+func (s *Surface) Scale(scale float64) {
+	for _, row := range s.Data {
+		for i, _ := range row {
+			row[i] *= scale
+		}
+	}
+
+	s.Min *= scale
+	s.Max *= scale
+}
+
 type GenerateOpt func(*Surface)
 
 func ResolutionOpt(res osgrid.Distance) GenerateOpt {
