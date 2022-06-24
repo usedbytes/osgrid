@@ -14,14 +14,14 @@ import (
 	"github.com/urfave/cli/v2"
 
 	"github.com/usedbytes/osgrid"
-	"github.com/usedbytes/osgrid/lib/surface"
+	"github.com/usedbytes/osgrid/lib/geometry"
 	"github.com/usedbytes/osgrid/osdata"
 	"github.com/usedbytes/osgrid/osdata/terrain50"
 )
 
-type SurfaceFormatter func(io.Writer, *surface.Surface) error
+type SurfaceFormatter func(io.Writer, *geometry.Surface) error
 
-func writeSurfaceImage(w io.Writer, s *surface.Surface, encoder func(io.Writer, image.Image) error, applysRGB bool) error {
+func writeSurfaceImage(w io.Writer, s *geometry.Surface, encoder func(io.Writer, image.Image) error, applysRGB bool) error {
 	gray := image.NewGray16(image.Rect(0, 0, len(s.Data), len(s.Data[0])))
 	scale := 65535.0 / (s.Max - s.Min)
 
@@ -39,7 +39,7 @@ func writeSurfaceImage(w io.Writer, s *surface.Surface, encoder func(io.Writer, 
 	return encoder(w, gray)
 }
 
-func writeSurfaceSV(w io.Writer, s *surface.Surface, sep string) error {
+func writeSurfaceSV(w io.Writer, s *geometry.Surface, sep string) error {
 	bld := &strings.Builder{}
 	for _, row := range s.Data {
 		for i, v := range row {
@@ -65,15 +65,15 @@ func writeSurfaceSV(w io.Writer, s *surface.Surface, sep string) error {
 func surfaceFormatterFromFormat(format string, c *cli.Context) (SurfaceFormatter, error) {
 	switch format {
 	case "txt":
-		return func(w io.Writer, s *surface.Surface) error { return writeSurfaceSV(w, s, c.String("sep")) }, nil
+		return func(w io.Writer, s *geometry.Surface) error { return writeSurfaceSV(w, s, c.String("sep")) }, nil
 	case "csv":
-		return func(w io.Writer, s *surface.Surface) error { return writeSurfaceSV(w, s, ",") }, nil
+		return func(w io.Writer, s *geometry.Surface) error { return writeSurfaceSV(w, s, ",") }, nil
 	case "tsv":
-		return func(w io.Writer, s *surface.Surface) error { return writeSurfaceSV(w, s, "\t") }, nil
+		return func(w io.Writer, s *geometry.Surface) error { return writeSurfaceSV(w, s, "\t") }, nil
 	case "dat":
-		return func(w io.Writer, s *surface.Surface) error { return writeSurfaceSV(w, s, " ") }, nil
+		return func(w io.Writer, s *geometry.Surface) error { return writeSurfaceSV(w, s, " ") }, nil
 	case "png":
-		return func(w io.Writer, s *surface.Surface) error {
+		return func(w io.Writer, s *geometry.Surface) error {
 			return writeSurfaceImage(w, s, png.Encode, c.Bool("srgb"))
 		}, nil
 	default:
@@ -87,7 +87,7 @@ type surfaceConfig struct {
 	outFile     io.WriteCloser
 	gridRef     osgrid.GridRef
 	formatter   SurfaceFormatter
-	opts        []surface.GenerateOpt
+	opts        []geometry.GenerateSurfaceOpt
 }
 
 func parseSurfaceArgs(c *cli.Context) (surfaceConfig, error) {
@@ -113,7 +113,7 @@ func parseSurfaceArgs(c *cli.Context) (surfaceConfig, error) {
 
 	// hres
 	if c.IsSet("hres") {
-		cfg.opts = append(cfg.opts, surface.ResolutionOpt(osgrid.Distance(c.Uint("hres"))))
+		cfg.opts = append(cfg.opts, geometry.SurfaceResolutionOpt(osgrid.Distance(c.Uint("hres"))))
 	}
 
 	// GRID_REFERENCE
@@ -172,7 +172,7 @@ func runSurface(c *cli.Context) error {
 		return fmt.Errorf("map bounds: %w", err)
 	}
 
-	surface, err := surface.Generate(cfg.elevationDB, topLeft, cfg.width, cfg.width, cfg.opts...)
+	surface, err := geometry.GenerateSurface(cfg.elevationDB, topLeft, cfg.width, cfg.width, cfg.opts...)
 	if err != nil {
 		return fmt.Errorf("generating surface: %w", err)
 	}

@@ -1,4 +1,4 @@
-package surface
+package geometry
 
 import (
 	"errors"
@@ -33,16 +33,16 @@ func (db *TestDatabase) GetFloat64Tile(ref osgrid.GridRef) (osdata.Float64Tile, 
 	return nil, errors.New("GetFloat64Tile not implemented")
 }
 
-func TestGenerateSimple(t *testing.T) {
+func TestGenerateSurfaceSimple(t *testing.T) {
 	db := &TestDatabase{}
 	topLeft, err := osgrid.Origin().Add(0, 100)
 	if err != nil {
 		t.Fatalf("topLeft: %v", err)
 	}
 
-	s, err := Generate(db, topLeft, 100*osgrid.Metre, 100*osgrid.Metre)
+	s, err := GenerateSurface(db, topLeft, 100*osgrid.Metre, 100*osgrid.Metre)
 	if err != nil {
-		t.Fatalf("Generate failed: %v", err)
+		t.Fatalf("GenerateSurface failed: %v", err)
 	}
 
 	expMin := float64(0.0)
@@ -73,7 +73,7 @@ func TestGenerateSimple(t *testing.T) {
 	}
 }
 
-func TestGenerateResolution(t *testing.T) {
+func TestGenerateSurfaceResolution(t *testing.T) {
 	db := &TestDatabase{}
 	topLeft, err := osgrid.Origin().Add(0, 100)
 	if err != nil {
@@ -82,9 +82,9 @@ func TestGenerateResolution(t *testing.T) {
 
 	res := 20 * osgrid.Metre
 
-	s, err := Generate(db, topLeft, 100*osgrid.Metre, 100*osgrid.Metre, ResolutionOpt(res))
+	s, err := GenerateSurface(db, topLeft, 100*osgrid.Metre, 100*osgrid.Metre, SurfaceResolutionOpt(res))
 	if err != nil {
-		t.Fatalf("Generate failed: %v", err)
+		t.Fatalf("GenerateSurface failed: %v", err)
 	}
 
 	if s.Resolution != res {
@@ -111,25 +111,25 @@ func TestGenerateResolution(t *testing.T) {
 	}
 }
 
-func TestGenerateInvalidResolution(t *testing.T) {
+func TestGenerateSurfaceInvalidResolution(t *testing.T) {
 	db := &TestDatabase{3 * osgrid.Metre}
 	topLeft, err := osgrid.Origin().Add(0, 100)
 	if err != nil {
 		t.Fatalf("topLeft: %v", err)
 	}
 
-	_, err = Generate(db, topLeft, 100*osgrid.Metre, 100*osgrid.Metre, ResolutionOpt(20*osgrid.Metre))
+	_, err = GenerateSurface(db, topLeft, 100*osgrid.Metre, 100*osgrid.Metre, SurfaceResolutionOpt(20*osgrid.Metre))
 	if err == nil {
-		t.Fatal("Generate should have failed with invalid resolution")
+		t.Fatal("GenerateSurface should have failed with invalid resolution")
 	}
 
 	if !strings.Contains(err.Error(), "multiple of") {
 		t.Error("wrong error:", err)
 	}
 
-	_, err = Generate(db, topLeft, 100*osgrid.Metre, 100*osgrid.Metre, ResolutionOpt(2*osgrid.Metre))
+	_, err = GenerateSurface(db, topLeft, 100*osgrid.Metre, 100*osgrid.Metre, SurfaceResolutionOpt(2*osgrid.Metre))
 	if err == nil {
-		t.Fatal("Generate should have failed with invalid resolution")
+		t.Fatal("GenerateSurface should have failed with invalid resolution")
 	}
 
 	if !strings.Contains(err.Error(), "at least") {

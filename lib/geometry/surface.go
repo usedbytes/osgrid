@@ -1,4 +1,4 @@
-package surface
+package geometry
 
 import (
 	"fmt"
@@ -40,9 +40,9 @@ func (s *Surface) Scale(scale float64) {
 	s.Max *= scale
 }
 
-type GenerateOpt func(*Surface)
+type GenerateSurfaceOpt func(*Surface)
 
-func ResolutionOpt(res osgrid.Distance) GenerateOpt {
+func SurfaceResolutionOpt(res osgrid.Distance) GenerateSurfaceOpt {
 	return func(s *Surface) {
 		s.Resolution = res
 	}
@@ -50,8 +50,8 @@ func ResolutionOpt(res osgrid.Distance) GenerateOpt {
 
 // Note that this will generate one more row/column than you might expect, as
 // points form the corners of regions of the surface, not the centres
-func Generate(db osdata.Float64Database, topLeft osgrid.GridRef,
-	width, height osgrid.Distance, opts ...GenerateOpt) (Surface, error) {
+func GenerateSurface(db osdata.Float64Database, topLeft osgrid.GridRef,
+	width, height osgrid.Distance, opts ...GenerateSurfaceOpt) (Surface, error) {
 
 	surf := Surface{
 		Resolution: db.Precision(),

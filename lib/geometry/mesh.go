@@ -2,8 +2,6 @@ package geometry
 
 import (
 	"math"
-
-	"github.com/usedbytes/osgrid/lib/surface"
 )
 
 type Mesh struct {
@@ -63,9 +61,9 @@ func makeTriangles(l *indexLayout, ccw bool) [][3]uint {
 // Winding
 // 
 
-type GenerateOpt func(*Mesh)
+type GenerateMeshOpt func(*Mesh)
 
-func GenerateMesh(s *surface.Surface, opts ...GenerateOpt) Mesh {
+func GenerateMesh(s *Surface, opts ...GenerateMeshOpt) Mesh {
 	m := Mesh{
 		HScale: 1.0,
 		VScale: 1.0,

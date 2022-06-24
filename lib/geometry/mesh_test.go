@@ -2,8 +2,6 @@ package geometry
 
 import (
 	"testing"
-
-	"github.com/usedbytes/osgrid/lib/surface"
 )
 
 func TestMakeTriangles(t *testing.T) {
@@ -64,8 +62,8 @@ func TestMakeTrianglesCW(t *testing.T) {
 	}
 }
 
-func TestGenerateSimple(t *testing.T) {
-	surf := surface.Surface{
+func TestGenerateMeshSimple(t *testing.T) {
+	surf := Surface{
 		Data: [][]float64{
 			{ 1, 2 },
 			{ 3, 4 },
