@@ -62,6 +62,15 @@ func writeSurfaceSV(w io.Writer, s *geometry.Surface, sep string) error {
 	return nil
 }
 
+func formatIsImage(format string) bool {
+	switch format {
+	case "png":
+		return true
+	}
+
+	return false
+}
+
 func surfaceFormatterFromFormat(format string, c *cli.Context) (SurfaceFormatter, error) {
 	switch format {
 	case "txt":
@@ -155,6 +164,14 @@ func parseSurfaceArgs(c *cli.Context) (surfaceConfig, error) {
 		return surfaceConfig{}, err
 	}
 
+	// flip
+	if c.IsSet("flip") {
+		cfg.opts = append(cfg.opts, geometry.SurfaceNorthToSouthOpt(c.Bool("flip")))
+	} else if formatIsImage(format) {
+		// Flip images by default
+		cfg.opts = append(cfg.opts, geometry.SurfaceNorthToSouthOpt(true))
+	}
+
 	success = true
 
 	return cfg, nil
@@ -182,6 +199,14 @@ func runSurface(c *cli.Context) error {
 	return nil
 }
 
+func flipFlag() *cli.BoolFlag {
+	return &cli.BoolFlag{
+		Name:        "flip",
+		Usage:       "Output data North->South instead of South->North",
+		DefaultText: "true for image outputs",
+	}
+}
+
 func sepFlag() *cli.StringFlag {
 	return &cli.StringFlag{
 		Name:  "sep",
@@ -207,6 +232,7 @@ var surfaceCmd cli.Command = cli.Command{
 	Flags: []cli.Flag{
 		elevationFlag(),
 		formatsFlag([]string{"csv", "dat", "tsv", "txt"}),
+		flipFlag(),
 		hresFlag(),
 		outfileFlag(),
 		sepFlag(),
