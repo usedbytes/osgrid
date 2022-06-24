@@ -167,12 +167,12 @@ func runSurface(c *cli.Context) error {
 	}
 	defer cfg.outFile.Close()
 
-	topLeft, err := cfg.gridRef.Add(-cfg.width/2, cfg.width/2)
+	southWest, err := cfg.gridRef.Add(-cfg.width/2, -cfg.width/2)
 	if err != nil {
 		return fmt.Errorf("map bounds: %w", err)
 	}
 
-	surface, err := geometry.GenerateSurface(cfg.elevationDB, topLeft, cfg.width, cfg.width, cfg.opts...)
+	surface, err := geometry.GenerateSurface(cfg.elevationDB, southWest, cfg.width, cfg.width, cfg.opts...)
 	if err != nil {
 		return fmt.Errorf("generating surface: %w", err)
 	}
