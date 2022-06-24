@@ -58,7 +58,7 @@ func SurfaceNorthToSouthOpt(n2s bool) GenerateSurfaceOpt {
 
 // Note that this will generate one more row/column than you might expect, as
 // points form the corners of regions of the surface, not the centres
-func GenerateSurface(db osdata.Float64Database, southWest osgrid.GridRef,
+func GenerateSurface(db osdata.Float64Database, centre osgrid.GridRef,
 	width, height osgrid.Distance, opts ...GenerateSurfaceOpt) (Surface, error) {
 
 	surf := Surface{
@@ -77,6 +77,11 @@ func GenerateSurface(db osdata.Float64Database, southWest osgrid.GridRef,
 	if surf.Resolution%db.Precision() != 0 {
 		// TODO: This could be relaxed with some interpolation
 		return Surface{}, fmt.Errorf("Resolution must be a multiple of database precision (%v)", db.Precision())
+	}
+
+	southWest, err := centre.Add(-width/2, -height/2)
+	if err != nil {
+		return Surface{}, err
 	}
 
 	nrows := int(height/surf.Resolution) + 1
