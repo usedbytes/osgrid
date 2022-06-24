@@ -83,7 +83,7 @@ func TestGenerateMeshSimple(t *testing.T) {
 		t.Errorf("incorrect number of vertices. Expected %v, got %v", 8, len(m.Vertices))
 	}
 
-	expZ := []float64{ 3, 4, 1, 2 }
+	expZ := []float64{ 1, 2, 3, 4 }
 	for i, v := range m.Vertices[:4] {
 		expX := float64(i % 2)
 		if v[0] != expX {

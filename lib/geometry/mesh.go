@@ -80,11 +80,8 @@ func GenerateMesh(s *Surface, opts ...GenerateMeshOpt) Mesh {
 	// Top and bottom
 	m.Vertices = make([][3]float64, rows * cols * 2);
 
-	for r := 0; r < len(s.Data); r++ {
+	for r, row := range s.Data {
 		y := float64(r) * hstep
-		// Surface is top-left to bottom right, but we want bottom-left to top-right
-		// TODO: Should be an option or something
-		row := s.Data[len(s.Data)-r-1]
 
 		for c, v := range row {
 			x := float64(c) * hstep
