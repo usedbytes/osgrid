@@ -54,14 +54,25 @@ func makeTriangles(l *indexLayout, ccw bool) [][3]uint {
 	return tris
 }
 
-// Options:
-// HScale
-// VScale --> No? Should apply to surface first.
-// WallThickness
-// Winding
-//
-
 type GenerateMeshOpt func(*Mesh)
+
+func MeshHScaleOpt(hscale float64) GenerateMeshOpt {
+	return func(m *Mesh) {
+		m.HScale = hscale
+	}
+}
+
+func MeshVScaleOpt(vscale float64) GenerateMeshOpt {
+	return func(m *Mesh) {
+		m.VScale = vscale
+	}
+}
+
+func MeshWindingOpt(ccw bool) GenerateMeshOpt {
+	return func(m *Mesh) {
+		m.WindingCCW = ccw
+	}
+}
 
 func GenerateMesh(s *Surface, opts ...GenerateMeshOpt) Mesh {
 	m := Mesh{
