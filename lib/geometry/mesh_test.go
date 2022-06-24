@@ -9,17 +9,17 @@ func TestMakeTriangles(t *testing.T) {
 	l := indexLayout{
 		bStart: 0,
 		tStart: 2,
-		step: 1,
+		step:   1,
 		stride: 2,
-		cols: 2,
-		rows: 2,
+		cols:   2,
+		rows:   2,
 	}
 
 	tris := makeTriangles(&l, true)
 
 	exp := [][3]uint{
-		{ 0, 1, 3 },
-		{ 3, 2, 0 },
+		{0, 1, 3},
+		{3, 2, 0},
 	}
 
 	if len(tris) != len(exp) {
@@ -38,17 +38,17 @@ func TestMakeTrianglesCW(t *testing.T) {
 	l := indexLayout{
 		bStart: 0,
 		tStart: 2,
-		step: 1,
+		step:   1,
 		stride: 2,
-		cols: 2,
-		rows: 2,
+		cols:   2,
+		rows:   2,
 	}
 
 	tris := makeTriangles(&l, false)
 
 	exp := [][3]uint{
-		{ 0, 2, 3 },
-		{ 3, 1, 0 },
+		{0, 2, 3},
+		{3, 1, 0},
 	}
 
 	if len(tris) != len(exp) {
@@ -65,25 +65,25 @@ func TestMakeTrianglesCW(t *testing.T) {
 func TestGenerateMeshSimple(t *testing.T) {
 	surf := Surface{
 		Data: [][]float64{
-			{ 1, 2 },
-			{ 3, 4 },
+			{1, 2},
+			{3, 4},
 		},
-		Min: 1,
-		Max: 4,
+		Min:        1,
+		Max:        4,
 		Resolution: 1,
 	}
 
 	m := GenerateMesh(&surf)
 
 	if len(m.Triangles) != (2 * 6) {
-		t.Errorf("incorrect number of triangles. Expected %v, got %v", 2 * 6, len(m.Triangles))
+		t.Errorf("incorrect number of triangles. Expected %v, got %v", 2*6, len(m.Triangles))
 	}
 
 	if len(m.Vertices) != 8 {
 		t.Errorf("incorrect number of vertices. Expected %v, got %v", 8, len(m.Vertices))
 	}
 
-	expZ := []float64{ 1, 2, 3, 4 }
+	expZ := []float64{1, 2, 3, 4}
 	for i, v := range m.Vertices[:4] {
 		expX := float64(i % 2)
 		if v[0] != expX {
@@ -119,23 +119,23 @@ func TestGenerateMeshSimple(t *testing.T) {
 
 	expTris := [][3]uint{
 		// Top, clockwise
-		{ 0, 2, 3 },
-		{ 3, 1, 0 },
+		{0, 2, 3},
+		{3, 1, 0},
 		// Base, ccw
-		{ 4, 5, 7 },
-		{ 7, 6, 4 },
+		{4, 5, 7},
+		{7, 6, 4},
 		// South, clockwise
-		{ 4, 0, 1 },
-		{ 1, 5, 4 },
+		{4, 0, 1},
+		{1, 5, 4},
 		// North, clockwise
-		{ 7, 3, 2 },
-		{ 2, 6, 7 },
+		{7, 3, 2},
+		{2, 6, 7},
 		// East, clockwise
-		{ 5, 1, 3 },
-		{ 3, 7, 5 },
+		{5, 1, 3},
+		{3, 7, 5},
 		// West, clockwise
-		{ 6, 2, 0 },
-		{ 0, 4, 6 },
+		{6, 2, 0},
+		{0, 4, 6},
 	}
 
 	for i, tri := range m.Triangles {

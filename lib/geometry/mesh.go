@@ -5,11 +5,11 @@ import (
 )
 
 type Mesh struct {
-	Vertices  [][3]float64
-	Triangles [][3]uint
+	Vertices   [][3]float64
+	Triangles  [][3]uint
 	WindingCCW bool
-	HScale float64
-	VScale float64
+	HScale     float64
+	VScale     float64
 }
 
 // Description of a mesh in terms of indices, to create triangles
@@ -32,10 +32,10 @@ func makeTriangles(l *indexLayout, ccw bool) [][3]uint {
 	tris := make([][3]uint, 0, ((2*l.cols - 2) * strips))
 
 	for strip := 0; strip < int(strips); strip++ {
-		bIdx := l.bStart + strip * l.stride
-		tIdx := l.tStart + strip * l.stride
+		bIdx := l.bStart + strip*l.stride
+		tIdx := l.tStart + strip*l.stride
 
-		for col := 0; col < l.cols - 1; col++ {
+		for col := 0; col < l.cols-1; col++ {
 			v0, v1, v2, v3 := uint(bIdx), uint(bIdx+l.step), uint(tIdx), uint(tIdx+l.step)
 
 			if ccw {
@@ -59,7 +59,7 @@ func makeTriangles(l *indexLayout, ccw bool) [][3]uint {
 // VScale --> No? Should apply to surface first.
 // WallThickness
 // Winding
-// 
+//
 
 type GenerateMeshOpt func(*Mesh)
 
@@ -78,7 +78,7 @@ func GenerateMesh(s *Surface, opts ...GenerateMeshOpt) Mesh {
 	hstep := float64(s.Resolution) * m.HScale
 
 	// Top and bottom
-	m.Vertices = make([][3]float64, rows * cols * 2);
+	m.Vertices = make([][3]float64, rows*cols*2)
 
 	for r, row := range s.Data {
 		y := float64(r) * hstep
@@ -86,18 +86,18 @@ func GenerateMesh(s *Surface, opts ...GenerateMeshOpt) Mesh {
 		for c, v := range row {
 			x := float64(c) * hstep
 
-			topIdx := r * cols + c
-			baseIdx := cols * rows + topIdx
+			topIdx := r*cols + c
+			baseIdx := cols*rows + topIdx
 
-			m.Vertices[topIdx] = [3]float64{ x, y, v * m.VScale }
-			m.Vertices[baseIdx] = [3]float64{ x, y, math.Min(s.Min, 0) }
+			m.Vertices[topIdx] = [3]float64{x, y, v * m.VScale}
+			m.Vertices[baseIdx] = [3]float64{x, y, math.Min(s.Min, 0)}
 		}
 	}
 
 	layout := indexLayout{
 		bStart: 0,
 		tStart: cols,
-		step: 1,
+		step:   1,
 		stride: cols,
 
 		rows: rows,
@@ -109,7 +109,7 @@ func GenerateMesh(s *Surface, opts ...GenerateMeshOpt) Mesh {
 	// Base triangles
 	// Winding is reversed so that the base faces outwards
 	layout.bStart = rows * cols
-	layout.tStart = rows * cols + layout.stride
+	layout.tStart = rows*cols + layout.stride
 	baseTris := makeTriangles(&layout, !m.WindingCCW)
 	m.Triangles = append(m.Triangles, baseTris...)
 
