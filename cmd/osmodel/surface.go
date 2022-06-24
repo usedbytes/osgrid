@@ -229,7 +229,7 @@ var surfaceCmd cli.Command = cli.Command{
 		formatsFlag([]string{"csv", "dat", "tsv", "txt"}),
 		flipFlag(),
 		hresFlag(),
-		outfileFlag(),
+		outfileFlag(false),
 		sepFlag(),
 		srgbFlag(),
 		widthFlag(),

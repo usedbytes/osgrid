@@ -13,14 +13,20 @@ const snowdon = "SH 60986 54375"
 // Re-use these between commands
 // They aren't global options because then they aren't visible in the individual
 // commands' help
-func outfileFlag() *cli.StringFlag {
-	return &cli.StringFlag{
-		Name:        "outfile",
-		Aliases:     []string{"o"},
-		Usage:       "`FILE` to write output to",
-		Value:       "-",
-		DefaultText: "stdout",
+func outfileFlag(required bool) *cli.StringFlag {
+	f := &cli.StringFlag{
+		Name:     "outfile",
+		Aliases:  []string{"o"},
+		Usage:    "`FILE` to write output to",
+		Required: required,
 	}
+
+	if !required {
+		f.Value = "-"
+		f.DefaultText = "stdout"
+	}
+
+	return f
 }
 
 func elevationFlag() *cli.StringFlag {
@@ -66,6 +72,7 @@ func main() {
 		Usage: "Topographical model generator from Ordnance Survey open data",
 		Commands: []*cli.Command{
 			&surfaceCmd,
+			&meshCmd,
 		},
 	}
 
