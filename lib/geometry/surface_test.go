@@ -123,6 +123,28 @@ func TestGenerateSurfaceInvalidResolution(t *testing.T) {
 	}
 }
 
+func TestGenerateSurfaceNorthToSouth(t *testing.T) {
+	db := &TestDatabase{}
+
+	s, err := GenerateSurface(db, osgrid.Origin(), 100*osgrid.Metre, 100*osgrid.Metre, SurfaceNorthToSouthOpt(true))
+	if err != nil {
+		t.Fatalf("GenerateSurface failed: %v", err)
+	}
+
+	for y, _ := range s.Data {
+		row := s.Data[len(s.Data)-y-1]
+		if len(row) != 101 {
+			t.Fatalf("Expected 101 cols, got %v", len(row))
+		}
+		for x, v := range row {
+			exp := float64(x + y)
+			if v != exp {
+				t.Fatalf("(%v, %v) expected %v got %v", x, y, exp, v)
+			}
+		}
+	}
+}
+
 func TestSurfaceAdjustMax(t *testing.T) {
 	s := Surface{
 		Data: [][]float64{

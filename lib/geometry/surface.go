@@ -9,10 +9,12 @@ import (
 )
 
 type Surface struct {
-	// Data[0][0] is the South-West corner
 	Data       [][]float64
 	Max, Min   float64
 	Resolution osgrid.Distance
+	// NorthToSouth is true if Data[0][0] is the North-West corner.
+	// Otherwise, Data[0][0] is the South-West corner
+	NorthToSouth bool
 }
 
 // Adjust the surface points so that 'max' becomes the new Max value
@@ -48,6 +50,12 @@ func SurfaceResolutionOpt(res osgrid.Distance) GenerateSurfaceOpt {
 	}
 }
 
+func SurfaceNorthToSouthOpt(n2s bool) GenerateSurfaceOpt {
+	return func(s *Surface) {
+		s.NorthToSouth = n2s
+	}
+}
+
 // Note that this will generate one more row/column than you might expect, as
 // points form the corners of regions of the surface, not the centres
 func GenerateSurface(db osdata.Float64Database, southWest osgrid.GridRef,
@@ -71,13 +79,14 @@ func GenerateSurface(db osdata.Float64Database, southWest osgrid.GridRef,
 		return Surface{}, fmt.Errorf("Resolution must be a multiple of database precision (%v)", db.Precision())
 	}
 
-	nrows := height / surf.Resolution
-	ncols := width / surf.Resolution
-	data := make([][]float64, 0, nrows)
+	nrows := int(height/surf.Resolution) + 1
+	ncols := int(width/surf.Resolution) + 1
+	data := make([][]float64, nrows)
 
 	maxElevation := float64(0.0)
 	minElevation := math.MaxFloat64
 
+	i := 0
 	for north := osgrid.Distance(0); north <= height; north += surf.Resolution {
 		row := make([]float64, 0, ncols)
 
@@ -103,7 +112,12 @@ func GenerateSurface(db osdata.Float64Database, southWest osgrid.GridRef,
 			row = append(row, val)
 		}
 
-		data = append(data, row)
+		if surf.NorthToSouth {
+			data[nrows-i-1] = row
+		} else {
+			data[i] = row
+		}
+		i++
 	}
 
 	surf.Data = data
