@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/binary"
 	"encoding/xml"
 	"fmt"
 	"io"
@@ -27,6 +28,53 @@ type meshConfig struct {
 	gridRef     osgrid.GridRef
 	formatter   MeshFormatter
 	meshOpts    []geometry.GenerateMeshOpt
+}
+
+func writeMeshSTL(w io.Writer, m *geometry.Mesh) error {
+	hdr := make([]byte, 80)
+	copy(hdr, []byte("shape osmodel"))
+
+	err := binary.Write(w, binary.LittleEndian, hdr)
+	if err != nil {
+		return err
+	}
+
+	err = binary.Write(w, binary.LittleEndian, uint32(len(m.Triangles)))
+	if err != nil {
+		return err
+	}
+
+	for _, t := range m.Triangles {
+		err = binary.Write(w, binary.LittleEndian, [3]float32{0, 0, 0})
+		if err != nil {
+			return err
+		}
+		for _, idx := range t {
+			vert := m.Vertices[idx]
+
+			err = binary.Write(w, binary.LittleEndian, float32(vert[0]))
+			if err != nil {
+				return err
+			}
+
+			err = binary.Write(w, binary.LittleEndian, float32(vert[1]))
+			if err != nil {
+				return err
+			}
+
+			err = binary.Write(w, binary.LittleEndian, float32(vert[2]))
+			if err != nil {
+				return err
+			}
+		}
+
+		err = binary.Write(w, binary.LittleEndian, uint16(0))
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func writeMeshX3D(w io.Writer, m *geometry.Mesh) error {
@@ -128,6 +176,8 @@ func meshFormatterFromFormat(format string, c *cli.Context) (MeshFormatter, erro
 	switch format {
 	case "scad":
 		return func(w io.Writer, m *geometry.Mesh) error { return writeMeshSCADPolyhedron(w, m) }, nil
+	case "stl":
+		return func(w io.Writer, m *geometry.Mesh) error { return writeMeshSTL(w, m) }, nil
 	case "x3d":
 		return func(w io.Writer, m *geometry.Mesh) error { return writeMeshX3D(w, m) }, nil
 	default:
@@ -220,7 +270,7 @@ func parseMeshArgs(c *cli.Context) (meshConfig, error) {
 		return meshConfig{}, err
 	}
 
-	if format == "x3d" {
+	if format == "stl" || format == "x3d" {
 		cfg.meshOpts = append(cfg.meshOpts, geometry.MeshWindingOpt(true))
 	}
 
@@ -276,7 +326,7 @@ var meshCmd cli.Command = cli.Command{
 	ArgsUsage: "GRID_REFERENCE",
 	Flags: []cli.Flag{
 		elevationFlag(),
-		formatsFlag([]string{"scad", "x3d"}),
+		formatsFlag([]string{"scad", "stl", "x3d"}),
 		hscaleFlag(),
 		vscaleFlag(),
 		outfileFlag(true),
