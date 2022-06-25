@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/xml"
 	"fmt"
 	"io"
 	"os"
@@ -12,6 +13,7 @@ import (
 
 	"github.com/usedbytes/osgrid"
 	"github.com/usedbytes/osgrid/lib/geometry"
+	"github.com/usedbytes/osgrid/lib/x3d"
 	"github.com/usedbytes/osgrid/osdata"
 	"github.com/usedbytes/osgrid/osdata/terrain50"
 )
@@ -25,6 +27,58 @@ type meshConfig struct {
 	gridRef     osgrid.GridRef
 	formatter   MeshFormatter
 	meshOpts    []geometry.GenerateMeshOpt
+}
+
+func writeMeshX3D(w io.Writer, m *geometry.Mesh) error {
+	x := &x3d.X3D{
+		Version: 3.2,
+		Profile: "Interchange",
+		Scene: &x3d.Scene{
+			Shape: &x3d.Shape{
+				IndexedFaceSet: &x3d.IndexedFaceSet{
+					CCW: true,
+					Coordinate: &x3d.Coordinate{
+						Point: m.Vertices,
+					},
+				},
+			},
+		},
+	}
+
+	indices := make(x3d.MFInt32, len(m.Triangles)*4)
+	for i, t := range m.Triangles {
+		indices[i*4+0] = int32(t[0])
+		indices[i*4+1] = int32(t[1])
+		indices[i*4+2] = int32(t[2])
+		indices[i*4+3] = int32(-1)
+	}
+
+	x.Scene.Shape.IndexedFaceSet.CoordIndex = indices
+
+	enc := xml.NewEncoder(w)
+	enc.Indent("", "\t")
+
+	procInst := xml.ProcInst{
+		Target: "xml",
+		Inst:   []byte("version=\"1.0\" encoding=\"UTF-8\""),
+	}
+	err := enc.EncodeToken(procInst)
+	if err != nil {
+		return err
+	}
+
+	dir := xml.Directive("DOCTYPE X3D PUBLIC \"ISO//Web3D//DTD X3D 3.2//EN\" \"https://www.web3d.org/specifications/x3d-3.2.dtd\"")
+	err = enc.EncodeToken(dir)
+	if err != nil {
+		return err
+	}
+
+	err = enc.Encode(x)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func writeMeshSCADPolyhedron(w io.Writer, m *geometry.Mesh) error {
@@ -74,6 +128,8 @@ func meshFormatterFromFormat(format string, c *cli.Context) (MeshFormatter, erro
 	switch format {
 	case "scad":
 		return func(w io.Writer, m *geometry.Mesh) error { return writeMeshSCADPolyhedron(w, m) }, nil
+	case "x3d":
+		return func(w io.Writer, m *geometry.Mesh) error { return writeMeshX3D(w, m) }, nil
 	default:
 		return nil, fmt.Errorf("unknown format: %s", format)
 	}
@@ -164,6 +220,10 @@ func parseMeshArgs(c *cli.Context) (meshConfig, error) {
 		return meshConfig{}, err
 	}
 
+	if format == "x3d" {
+		cfg.meshOpts = append(cfg.meshOpts, geometry.MeshWindingOpt(true))
+	}
+
 	success = true
 
 	return cfg, nil
@@ -216,7 +276,7 @@ var meshCmd cli.Command = cli.Command{
 	ArgsUsage: "GRID_REFERENCE",
 	Flags: []cli.Flag{
 		elevationFlag(),
-		formatsFlag([]string{"scad"}),
+		formatsFlag([]string{"scad", "x3d"}),
 		hscaleFlag(),
 		vscaleFlag(),
 		outfileFlag(true),
