@@ -234,3 +234,38 @@ func TestGenerateMeshWindingCCW(t *testing.T) {
 
 	validateSimpleCube(t, &m)
 }
+
+func TestGenerateMeshTexCoords(t *testing.T) {
+	surf := Surface{
+		Data: [][]float64{
+			{1, 2, 3},
+			{4, 5, 6},
+			{7, 8, 9},
+		},
+		Min:        1,
+		Max:        9,
+		Resolution: 1,
+	}
+
+	tc := [][][2]float64{
+		{{0.0, 0.0}, {0.5, 0.0}, {1.0, 0.0}},
+		{{0.0, 0.5}, {0.5, 0.5}, {1.0, 0.5}},
+		{{0.0, 1.0}, {0.5, 1.0}, {1.0, 1.0}},
+	}
+
+	m := GenerateMesh(&surf, MeshTextureCoordsOpt(tc))
+
+	if len(m.TexCoords) != len(m.Vertices) {
+		t.Errorf("wrong number of texture coordinates, expected %v got %v", len(m.Vertices), len(m.TexCoords))
+	}
+
+	for i, got := range m.TexCoords {
+		tcrow := (i / 3) % 3
+		tccol := i % 3
+		exp := tc[tcrow][tccol]
+
+		if exp[0] != got[0] || exp[1] != got[1] {
+			t.Errorf("wrong coordinate, vertex %v, expected (%f,%f) got (%f,%f)", i, exp[0], exp[1], got[0], got[1])
+		}
+	}
+}

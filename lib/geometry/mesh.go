@@ -6,10 +6,13 @@ import (
 
 type Mesh struct {
 	Vertices   [][3]float64
+	TexCoords  [][2]float64
 	Triangles  [][3]uint
 	WindingCCW bool
 	HScale     float64
 	VScale     float64
+
+	texCoords [][][2]float64
 }
 
 // Description of a mesh in terms of indices, to create triangles
@@ -74,6 +77,12 @@ func MeshWindingOpt(ccw bool) GenerateMeshOpt {
 	}
 }
 
+func MeshTextureCoordsOpt(tc [][][2]float64) GenerateMeshOpt {
+	return func(m *Mesh) {
+		m.texCoords = tc
+	}
+}
+
 func GenerateMesh(s *Surface, opts ...GenerateMeshOpt) Mesh {
 	m := Mesh{
 		HScale: 1.0,
@@ -91,6 +100,10 @@ func GenerateMesh(s *Surface, opts ...GenerateMeshOpt) Mesh {
 	// Top and bottom
 	m.Vertices = make([][3]float64, rows*cols*2)
 
+	if len(m.texCoords) != 0 {
+		m.TexCoords = make([][2]float64, len(m.Vertices))
+	}
+
 	for r, row := range s.Data {
 		y := float64(r) * hstep
 
@@ -102,6 +115,12 @@ func GenerateMesh(s *Surface, opts ...GenerateMeshOpt) Mesh {
 
 			m.Vertices[topIdx] = [3]float64{x, y, v * m.VScale}
 			m.Vertices[baseIdx] = [3]float64{x, y, math.Min(s.Min, 0)}
+
+			if len(m.TexCoords) != 0 {
+				m.TexCoords[topIdx] = m.texCoords[r][c]
+				// TODO: Should (optionally) set to out-of-bounds value
+				m.TexCoords[baseIdx] = m.texCoords[r][c]
+			}
 		}
 	}
 
