@@ -39,6 +39,16 @@ func elevationFlag() *cli.StringFlag {
 	}
 }
 
+func rasterFlag() *cli.StringFlag {
+	return &cli.StringFlag{
+		Name:     "raster",
+		Aliases:  []string{"r"},
+		Usage:    "`PATH` to raster data (should contain 'data' folder)",
+		Required: true,
+		EnvVars:  []string{"OSMODEL_RASTER_DB"},
+	}
+}
+
 func hresFlag() *cli.UintFlag {
 	return &cli.UintFlag{
 		Name:        "hres",
@@ -72,6 +82,7 @@ func main() {
 		Usage: "Topographical model generator from Ordnance Survey open data",
 		Commands: []*cli.Command{
 			&surfaceCmd,
+			&textureCmd,
 			&meshCmd,
 		},
 	}

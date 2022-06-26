@@ -49,27 +49,18 @@ func GenerateTexture(db osdata.ImageDatabase, centre osgrid.GridRef,
 
 	for drawnMinY > 0 {
 		dy := 0
-
-		log.Println("top rowStart:", rowStart)
 		coord := rowStart
 
 		for drawnMaxX < numPixels {
-			log.Println("drawnMaxX:", drawnMaxX, "numPixels:", numPixels)
-			log.Println("drawnMinY:", drawnMinY)
-			log.Println("coord:", coord)
-
 			tile, err := db.GetImageTile(coord)
 			if err != nil {
 				log.Fatal("GetImageTile: ", err)
 			}
 
-			log.Println("tile:", tile.BottomLeft())
-
 			img := tile.GetImage()
 
 			// Pixel coordinate of the bottom left of this patch
 			minX, maxY, err := tile.GetPixelCoord(coord)
-			log.Println("minX, maxY:", minX, maxY)
 
 			// How far right can we go within this tile?
 			// Assume we need the whole width to start with
@@ -86,7 +77,6 @@ func GenerateTexture(db osdata.ImageDatabase, centre osgrid.GridRef,
 					log.Fatalln("bottom right should be in tile:", err)
 				}
 			}
-			log.Println("maxX:", maxX)
 
 			// How far up can we go within this tile?
 			// Assume we need the whole height to start with
@@ -103,7 +93,6 @@ func GenerateTexture(db osdata.ImageDatabase, centre osgrid.GridRef,
 					log.Fatalln("top right should be in tile:", err)
 				}
 			}
-			log.Println("minY:", minY)
 
 			//minX /= downScale
 			//maxX /= downScale
@@ -116,8 +105,6 @@ func GenerateTexture(db osdata.ImageDatabase, centre osgrid.GridRef,
 			sr := image.Rect(minX, minY, maxX, maxY)
 			dr := image.Rectangle{dp, dp.Add(sr.Size())}
 			draw.Draw(canvas, dr, img, sr.Min, draw.Src)
-
-			log.Println("copy:", sr, "->", dr)
 
 			drawnMaxX += sr.Size().X
 			dy = sr.Size().Y
@@ -140,8 +127,6 @@ func GenerateTexture(db osdata.ImageDatabase, centre osgrid.GridRef,
 		aligned := rowStart.Align(tile.Height())
 		rowStart, _ = rowStart.Add(0, -(rowStart.TileNorthing() - aligned.TileNorthing()))
 		//rowStart, _ = rowStart.Align(tile.Height()).Add(bottomLeft.TileEasting() - rowStart.TileEasting(), 0)
-		log.Println("New row", drawnMinY)
-		log.Println("New rowStart", rowStart)
 	}
 
 	return Texture{

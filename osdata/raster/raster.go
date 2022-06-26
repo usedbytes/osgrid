@@ -320,8 +320,6 @@ func findOldest(cache []tileCacheEntry) int {
 func (d *Database) hit(slot int) *Tile {
 	tile := d.tileCache[slot].tile
 
-	fmt.Printf("Hit %d -> %s\n", slot, tile.String())
-
 	d.tileCache[slot].timestamp = d.timestamp
 	return tile
 }
@@ -340,8 +338,6 @@ func (d *Database) readAllocate(path string) (*Tile, int, error) {
 		evict.slot = -1
 		d.tileMap[key] = evict
 	}
-
-	fmt.Printf("Allocate %s -> %d (%d)\n", tile.String(), slot, d.timestamp)
 
 	d.tileCache[slot].timestamp = d.timestamp
 	d.tileCache[slot].tile = tile
@@ -402,7 +398,7 @@ func (d *Database) Precision() osgrid.Distance {
 	return d.precision
 }
 
-func OpenDatabase(path string, tileSize osgrid.Distance) (osdata.Database, error) {
+func OpenDatabase(path string, tileSize osgrid.Distance) (osdata.ImageDatabase, error) {
 	datapath := filepath.Join(path, "data")
 
 	fi, err := os.Stat(datapath)
