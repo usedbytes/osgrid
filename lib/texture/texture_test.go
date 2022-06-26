@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/usedbytes/osgrid"
+	"github.com/usedbytes/osgrid/lib/geometry"
 	"github.com/usedbytes/osgrid/osdata"
 )
 
@@ -268,4 +269,125 @@ func TestGenerateMultiTilePrecision(t *testing.T) {
 	}
 
 	testMultiTile(t, db)
+}
+
+func TestGenerateTextureMap(t *testing.T) {
+	s := geometry.Surface{
+		Data: [][]float64{
+			{1.0, 2.0, 3.0},
+			{1.0, 2.0, 3.0},
+			{1.0, 2.0, 3.0},
+		},
+		Max:        3.0,
+		Min:        1.0,
+		Resolution: 1 * osgrid.Metre,
+	}
+
+	db := &TestImageDatabase{
+		precision:      1 * osgrid.Metre,
+		pixelPrecision: 1,
+		tileSize:       10 * osgrid.Metre,
+	}
+
+	ref, err := osgrid.Origin().Add(1, 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	tex, err := GenerateTexture(db, ref, 2, 2)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	texmap := GenerateTextureMap(&tex, &s)
+
+	exp := []float64{0, 0.5, 1.0}
+	for i, row := range texmap.TexCoords {
+		for j, tc := range row {
+			if tc[0] != exp[j] || tc[1] != exp[i] {
+				t.Errorf("(%v,%v) wrong coord, expected (%f,%f) got (%f,%f)", j, i, exp[j], exp[i], tc[0], tc[1])
+			}
+		}
+	}
+}
+
+func TestGenerateTextureMapFlipped(t *testing.T) {
+	s := geometry.Surface{
+		Data: [][]float64{
+			{1.0, 2.0, 3.0},
+			{1.0, 2.0, 3.0},
+			{1.0, 2.0, 3.0},
+		},
+		Max:        3.0,
+		Min:        1.0,
+		Resolution: 1 * osgrid.Metre,
+	}
+
+	db := &TestImageDatabase{
+		precision:      1 * osgrid.Metre,
+		pixelPrecision: 1,
+		tileSize:       10 * osgrid.Metre,
+	}
+
+	ref, err := osgrid.Origin().Add(1, 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	tex, err := GenerateTexture(db, ref, 2, 2)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	texmap := GenerateTextureMap(&tex, &s, TextureMapNorthToSouthOpt(true))
+
+	exp := []float64{0, 0.5, 1.0}
+	for i, row := range texmap.TexCoords {
+		for j, tc := range row {
+			if tc[0] != exp[j] || tc[1] != 1.0-exp[i] {
+				t.Errorf("(%v,%v) wrong coord, expected (%f,%f) got (%f,%f)", j, i, exp[j], 1.0-exp[i], tc[0], tc[1])
+			}
+		}
+	}
+}
+
+func TestGenerateTextureMapBothFlipped(t *testing.T) {
+	s := geometry.Surface{
+		Data: [][]float64{
+			{1.0, 2.0, 3.0},
+			{1.0, 2.0, 3.0},
+			{1.0, 2.0, 3.0},
+		},
+		Max:          3.0,
+		Min:          1.0,
+		Resolution:   1 * osgrid.Metre,
+		NorthToSouth: true,
+	}
+
+	db := &TestImageDatabase{
+		precision:      1 * osgrid.Metre,
+		pixelPrecision: 1,
+		tileSize:       10 * osgrid.Metre,
+	}
+
+	ref, err := osgrid.Origin().Add(1, 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	tex, err := GenerateTexture(db, ref, 2, 2)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	texmap := GenerateTextureMap(&tex, &s, TextureMapNorthToSouthOpt(true))
+
+	exp := []float64{0, 0.5, 1.0}
+	for i, row := range texmap.TexCoords {
+		for j, tc := range row {
+			if tc[0] != exp[j] || tc[1] != exp[i] {
+				t.Errorf("(%v,%v) wrong coord, expected (%f,%f) got (%f,%f)", j, i, exp[j], exp[i], tc[0], tc[1])
+			}
+		}
+	}
 }

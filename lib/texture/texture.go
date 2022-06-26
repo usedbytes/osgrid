@@ -6,6 +6,7 @@ import (
 	"image/draw"
 
 	"github.com/usedbytes/osgrid"
+	"github.com/usedbytes/osgrid/lib/geometry"
 	"github.com/usedbytes/osgrid/osdata"
 )
 
@@ -132,4 +133,53 @@ func GenerateTexture(db osdata.ImageDatabase, centre osgrid.GridRef,
 	return Texture{
 		Image: canvas,
 	}, nil
+}
+
+type TextureMap struct {
+	Surface      *geometry.Surface
+	Texture      *Texture
+	NorthToSouth bool
+	TexCoords    [][][2]float64
+}
+
+type GenerateTextureMapOpt func(m *TextureMap)
+
+func TextureMapNorthToSouthOpt(n2s bool) GenerateTextureMapOpt {
+	return func(tm *TextureMap) {
+		tm.NorthToSouth = n2s
+	}
+}
+
+func GenerateTextureMap(t *Texture, s *geometry.Surface, opts ...GenerateTextureMapOpt) TextureMap {
+	tm := TextureMap{
+		Surface: s,
+		Texture: t,
+	}
+
+	for _, opt := range opts {
+		opt(&tm)
+	}
+
+	xStep := 1.0 / float64(len(s.Data[0])-1)
+	yStep := 1.0 / float64(len(s.Data)-1)
+
+	flip := (tm.NorthToSouth != s.NorthToSouth)
+
+	coords := make([][][2]float64, len(s.Data))
+
+	for row := 0; row < len(s.Data); row++ {
+		coordRow := make([][2]float64, len(s.Data[0]))
+		for col := 0; col < len(s.Data[0]); col++ {
+			ycoord := float64(row) * yStep
+			if flip {
+				ycoord = 1.0 - ycoord
+			}
+			coordRow[col] = [2]float64{float64(col) * xStep, ycoord}
+		}
+		coords[row] = coordRow
+	}
+
+	tm.TexCoords = coords
+
+	return tm
 }
