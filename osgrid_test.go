@@ -322,25 +322,6 @@ func TestAdd(t *testing.T) {
 	}
 }
 
-func TestExample(t *testing.T) {
-	summit, _ := ParseGridRef("SH 60986 54375")
-	point, _ := summit.Add(300*Metre, 2*Kilometre)
-	fmt.Println(point.String())
-}
-
-/*
-func TestDrawGrid(t *testing.T) {
-	origin, _ := ParseGridRef("SV 00")
-	for north := Distance(12 * tileSize); north >= 0; north -= tileSize {
-		for east := 0 * Metre; east < 7 * tileSize; east += tileSize {
-			val, _ := origin.Add(east, north)
-			fmt.Printf("%s ", val.String()[:3])
-		}
-		fmt.Println("")
-	}
-}
-*/
-
 func TestSub(t *testing.T) {
 	for i, test := range addTests {
 		a, err := ParseGridRef(test.a)
