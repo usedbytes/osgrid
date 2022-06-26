@@ -340,3 +340,101 @@ func TestDrawGrid(t *testing.T) {
 	}
 }
 */
+
+func TestSub(t *testing.T) {
+	for i, test := range addTests {
+		a, err := ParseGridRef(test.a)
+		if err != nil {
+			t.Error(i, err)
+		}
+
+		b, err := ParseGridRef(test.b)
+		if err != nil {
+			t.Error(i, err)
+		}
+
+		// B sub A
+		e, n := b.Sub(a)
+
+		if e != test.east || n != test.north {
+			t.Errorf("%d b.Sub(a) got: %v,%v, expected: %v,%v", i, e, n, test.east, test.north)
+		}
+
+		// A sub B
+		e, n = a.Sub(b)
+
+		if e != -test.east || n != -test.north {
+			t.Errorf("%d a.Sub(b) got: %v,%v, expected: %v,%v", i, e, n, -test.east, -test.north)
+		}
+	}
+}
+
+type absTest struct {
+	str         string
+	absEasting  Distance
+	absNorthing Distance
+}
+
+var absTests []absTest = []absTest{
+	{
+		"SV 0 0",
+		0,
+		0,
+	},
+	{
+		"SV 3 1",
+		30 * Kilometre,
+		10 * Kilometre,
+	},
+	{
+		"SV 01 02",
+		1 * Kilometre,
+		2 * Kilometre,
+	},
+	{
+		"SV 007 009",
+		700 * Metre,
+		900 * Metre,
+	},
+	{
+		"SV 0003 0001",
+		30 * Metre,
+		10 * Metre,
+	},
+	{
+		"SV 00001 00001",
+		1 * Metre,
+		1 * Metre,
+	},
+	{
+		"TQ 389 773",
+		5*100*Kilometre + 3*10*Kilometre + 8*1*Kilometre + 9*100*Metre,
+		1*100*Kilometre + 7*10*Kilometre + 7*1*Kilometre + 3*100*Metre,
+	},
+	{
+		"RV 0 0",
+		-1 * 500 * Kilometre,
+		0,
+	},
+	{
+		"WV 0 0",
+		-1 * 500 * Kilometre,
+		-1 * 500 * Kilometre,
+	},
+}
+
+func TestAbs(t *testing.T) {
+	for i, test := range absTests {
+		ref, err := ParseGridRef(test.str)
+		if err != nil {
+			t.Error(err)
+			continue
+		}
+
+		ae, an := ref.AbsEasting(), ref.AbsNorthing()
+
+		if ae != test.absEasting || an != test.absNorthing {
+			t.Errorf("%d %s got: %v,%v, expected: %v,%v", i, test.str, ae, an, test.absEasting, test.absNorthing)
+		}
+	}
+}

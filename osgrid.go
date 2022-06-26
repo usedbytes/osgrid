@@ -109,6 +109,40 @@ func (g GridRef) TileNorthing() Distance {
 	return g.northing
 }
 
+// Get Easting, Northing from AA00 to gridRef
+func (g GridRef) distFromAA00() (Distance, Distance) {
+	tile := g.Tile()
+
+	first := strings.IndexRune(gridChars, rune(tile[0]))
+	second := strings.IndexRune(gridChars, rune(tile[1]))
+
+	southing := (Distance(first/5) * 500 * Kilometre) + (Distance(second/5) * 100 * Kilometre) - g.TileNorthing()
+	easting := (Distance(first%5) * 500 * Kilometre) + (Distance(second%5) * 100 * Kilometre) + g.TileEasting()
+
+	return easting, -southing
+}
+
+func (g GridRef) Sub(b GridRef) (Distance, Distance) {
+	ae, an := g.distFromAA00()
+	be, bn := b.distFromAA00()
+
+	return ae - be, an - bn
+}
+
+func (g GridRef) AbsEasting() Distance {
+	ae, _ := g.distFromAA00()
+	be, _ := Origin().distFromAA00()
+
+	return ae - be
+}
+
+func (g GridRef) AbsNorthing() Distance {
+	_, an := g.distFromAA00()
+	_, bn := Origin().distFromAA00()
+
+	return an - bn
+}
+
 func (g GridRef) Align(to Distance) GridRef {
 	if to == 0 {
 		to = 1
