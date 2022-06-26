@@ -1,9 +1,9 @@
 package texture
 
 import (
+	"fmt"
 	"image"
 	"image/draw"
-	"log"
 
 	"github.com/usedbytes/osgrid"
 	"github.com/usedbytes/osgrid/osdata"
@@ -20,17 +20,17 @@ func GenerateTexture(db osdata.ImageDatabase, centre osgrid.GridRef,
 
 	bottomLeft, err := centre.Add(osgrid.Distance(-width/2), osgrid.Distance(-height/2))
 	if err != nil {
-		log.Fatal(err)
+		return Texture{}, err
 	}
 
 	bottomRight, err := centre.Add(osgrid.Distance(width/2), osgrid.Distance(-height/2))
 	if err != nil {
-		log.Fatal(err)
+		return Texture{}, err
 	}
 
 	topRight, err := centre.Add(osgrid.Distance(width/2), osgrid.Distance(height/2))
 	if err != nil {
-		log.Fatal(err)
+		return Texture{}, err
 	}
 
 	tile, err := db.GetImageTile(bottomLeft)
@@ -54,7 +54,7 @@ func GenerateTexture(db osdata.ImageDatabase, centre osgrid.GridRef,
 		for drawnMaxX < numPixels {
 			tile, err := db.GetImageTile(coord)
 			if err != nil {
-				log.Fatal("GetImageTile: ", err)
+				return Texture{}, err
 			}
 
 			img := tile.GetImage()
@@ -74,7 +74,7 @@ func GenerateTexture(db osdata.ImageDatabase, centre osgrid.GridRef,
 
 				maxX, _, err = tile.GetPixelCoord(regionRightEdge)
 				if err != nil {
-					log.Fatalln("bottom right should be in tile:", err)
+					return Texture{}, fmt.Errorf("right edge should be in tile: %w", err)
 				}
 			}
 
@@ -90,7 +90,7 @@ func GenerateTexture(db osdata.ImageDatabase, centre osgrid.GridRef,
 
 				_, minY, err = tile.GetPixelCoord(regionTopEdge)
 				if err != nil {
-					log.Fatalln("top right should be in tile:", err)
+					return Texture{}, fmt.Errorf("top right should be in tile: %w", err)
 				}
 			}
 
@@ -111,7 +111,7 @@ func GenerateTexture(db osdata.ImageDatabase, centre osgrid.GridRef,
 
 			coord, err = tile.BottomLeft().Add(tile.Width(), coord.TileNorthing()-tile.BottomLeft().TileNorthing())
 			if err != nil {
-				log.Fatal(err)
+				return Texture{}, err
 			}
 		}
 
@@ -122,7 +122,7 @@ func GenerateTexture(db osdata.ImageDatabase, centre osgrid.GridRef,
 		//coord, err = tile.BottomLeft().Add(tile.Width(), coord.TileNorthing() - tile.BottomLeft().TileNorthing())
 		rowStart, err = rowStart.Add(0, tile.Height())
 		if err != nil {
-			log.Fatal(err)
+			return Texture{}, err
 		}
 		aligned := rowStart.Align(tile.Height())
 		rowStart, _ = rowStart.Add(0, -(rowStart.TileNorthing() - aligned.TileNorthing()))
