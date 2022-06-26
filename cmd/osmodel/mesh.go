@@ -22,7 +22,9 @@ import (
 	"github.com/usedbytes/osgrid/osdata/terrain50"
 )
 
-type MeshFormatter func(io.Writer, *geometry.Mesh) error
+type meshOutputOpts struct {
+	textureFilename string
+}
 
 type meshConfig struct {
 	elevationDB osdata.Float64Database
@@ -33,9 +35,12 @@ type meshConfig struct {
 	formatter   MeshFormatter
 	meshOpts    []geometry.GenerateMeshOpt
 	textureOpts []texture.GenerateTextureOpt
+	outputOpts  meshOutputOpts
 }
 
-func writeMeshSTL(w io.Writer, m *geometry.Mesh) error {
+type MeshFormatter func(io.Writer, *geometry.Mesh, *meshOutputOpts) error
+
+func writeMeshSTL(w io.Writer, m *geometry.Mesh, opts *meshOutputOpts) error {
 	hdr := make([]byte, 80)
 	copy(hdr, []byte("shape osmodel"))
 
@@ -82,7 +87,7 @@ func writeMeshSTL(w io.Writer, m *geometry.Mesh) error {
 	return nil
 }
 
-func writeMeshX3D(w io.Writer, m *geometry.Mesh) error {
+func writeMeshX3D(w io.Writer, m *geometry.Mesh, opts *meshOutputOpts) error {
 	x := &x3d.X3D{
 		Version: 3.2,
 		Profile: "Interchange",
@@ -111,7 +116,7 @@ func writeMeshX3D(w io.Writer, m *geometry.Mesh) error {
 	if len(m.TexCoords) == len(m.Vertices) {
 		x.Scene.Shape.Appearance = &x3d.Appearance{
 			ImageTexture: &x3d.ImageTexture{
-				URL: "texture.png", // FIXME
+				URL: opts.textureFilename,
 				TextureProperties: &x3d.TextureProperties{
 					BoundaryModeS: "CLAMP",
 					BoundaryModeT: "CLAMP",
@@ -150,7 +155,7 @@ func writeMeshX3D(w io.Writer, m *geometry.Mesh) error {
 	return nil
 }
 
-func writeMeshSCADPolyhedron(w io.Writer, m *geometry.Mesh) error {
+func writeMeshSCADPolyhedron(w io.Writer, m *geometry.Mesh, opts *meshOutputOpts) error {
 	_, err := io.WriteString(w, "polyhedron(\n\t")
 	if err != nil {
 		return err
@@ -196,11 +201,13 @@ func writeMeshSCADPolyhedron(w io.Writer, m *geometry.Mesh) error {
 func meshFormatterFromFormat(format string, c *cli.Context) (MeshFormatter, error) {
 	switch format {
 	case "scad":
-		return func(w io.Writer, m *geometry.Mesh) error { return writeMeshSCADPolyhedron(w, m) }, nil
+		return func(w io.Writer, m *geometry.Mesh, opts *meshOutputOpts) error {
+			return writeMeshSCADPolyhedron(w, m, opts)
+		}, nil
 	case "stl":
-		return func(w io.Writer, m *geometry.Mesh) error { return writeMeshSTL(w, m) }, nil
+		return func(w io.Writer, m *geometry.Mesh, opts *meshOutputOpts) error { return writeMeshSTL(w, m, opts) }, nil
 	case "x3d":
-		return func(w io.Writer, m *geometry.Mesh) error { return writeMeshX3D(w, m) }, nil
+		return func(w io.Writer, m *geometry.Mesh, opts *meshOutputOpts) error { return writeMeshX3D(w, m, opts) }, nil
 	default:
 		return nil, fmt.Errorf("unknown format: %s", format)
 	}
@@ -309,6 +316,9 @@ func parseMeshArgs(c *cli.Context) (meshConfig, error) {
 		if format != "x3d" {
 			return meshConfig{}, fmt.Errorf("texturing only supported for X3D output")
 		}
+
+		outfile := c.String("outfile")
+		cfg.outputOpts.textureFilename = outfile[:strings.LastIndex(outfile, ".")] + "_texture.png"
 	}
 
 	success = true
@@ -334,8 +344,7 @@ func runMesh(c *cli.Context) error {
 			return fmt.Errorf("generating texture: %w", err)
 		}
 
-		// FIXME:
-		f, err := os.Create("texture.png")
+		f, err := os.Create(cfg.outputOpts.textureFilename)
 		if err != nil {
 			return err
 		}
@@ -352,7 +361,7 @@ func runMesh(c *cli.Context) error {
 
 	mesh := geometry.GenerateMesh(&surface, cfg.meshOpts...)
 
-	cfg.formatter(cfg.outFile, &mesh)
+	cfg.formatter(cfg.outFile, &mesh, &cfg.outputOpts)
 
 	return nil
 }
@@ -381,7 +390,7 @@ func textureFlag() *cli.BoolFlag {
 	return &cli.BoolFlag{
 		Name:    "texture",
 		Aliases: []string{"t"},
-		Usage:   "Apply a texture using 'raster' data",
+		Usage:   "Generate and apply a texture using 'raster' data",
 	}
 }
 
