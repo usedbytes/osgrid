@@ -1,0 +1,6 @@
+* Fix the TIFF issue #1
+* Downscale functionality in `lib/texture`
+* Border/out-of-bounds colour for textured X3D back/sides
+* Automatic detection of database tile sizes
+* Test more raster formats
+* Determine what the data layout is for a _full_ raster dataset

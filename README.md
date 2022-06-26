@@ -1,11 +1,13 @@
 Ordnance Survey - The National Grid
 ===================================
 
-The base `osgrid` package provides library functions for working with the
-[Ordnance Survey National Grid](https://www.ordnancesurvey.co.uk/resources/maps-and-geographic-resources/the-national-grid.html)
-mapping coordinate system used in the United Kingdom.
+The [Ordnance Survey National Grid](https://www.ordnancesurvey.co.uk/resources/maps-and-geographic-resources/the-national-grid.html)
+is a coordinate system commonly used in the United Kingdom for mapping and
+survey data.
 
-`osgrid` can parse, print and do arithmetic on OS "grid references"
+The base `github.com/usedbytes/osgrid` package provides functionality for 
+parsing, formatting and manipulating coordinates in the OS National Grid system
+("grid references").
 
 For example, the OS grid reference of the summit of Snowdon is `SH 60986 54375`.
 We can find the OS grid reference for the point 300 metres East and 2 kilometres
@@ -17,54 +19,43 @@ North like so:
 	fmt.Println(point.String())
 ```
 
-`terrain50`
------------
+## `osdata`
 
-The Ordnance Survey makes much of their data available for download for free
-from [their website](https://osdatahub.os.uk/downloads/open).
+The Ordnance Survey make lots of their mapping data available for free under
+[OS OpenData](https://osdatahub.os.uk/downloads/open).
 
-One such dataset is the [_Terrain 50_](https://osdatahub.os.uk/downloads/open/Terrain50)
-which provides elevation data, with 0.1 m vertical and 50 m horizontal resolution,
-for the whole of the United Kingdom.
+Under `osdata` there are two packages for working with a subset of that data:
 
-The `terrain50` package provides a way to work with this dataset, giving easy
-access to elevation data by grid-reference.
+* [`terrain50`](osdata/terrain50): For accessing the OS [Terrain50](https://osdatahub.os.uk/downloads/open/Terrain50)
+  dataset, which provides elevation data for the whole of the UK, with 50 m
+  horizontal and 0.1 m vertical resolution.
+* [`raster`](osdata/raster): For accessing raster-format data. This has only been tested with
+  the [OS VectorMap District](https://osdatahub.os.uk/downloads/open/VectorMapDistrict)
+  dataset at the time of writing.
 
-The `terrain50.Database` object represents the data set. To use it, simply
-download the _Terrain 50_ "ASCII Grid" dataset, and extract it to a location. Use
-this location to open the database. The path should be to the directory _which
-contains the `data` directory_:
+Further details on how to use the packages can be found in their respective
+directories.
 
-```
-	db, _ := terrain50.OpenDatabase("/path/to/terrain_50_data", 10 * osgrid.Kilometre)
 
-```
+## `cmd/osmodel`
 
-If all goes well, you can now start asking for elevation information for a point:
-```
-	summit, _ := osgrid.ParseGridRef("SH 60986 54375")
-	elevation, _ := db.GetData(summit)
-	fmt.Printf("Snowdon's summit is at %f m", elevation)
-```
+[`osmodel`](cmd/osmodel) is a command-line application which uses the other packages in this
+repository to generate different representations of the supported
+[OS OpenData](https://osdatahub.os.uk/downloads/open).
+datasets.
 
-The `terrain50.Database` implements a tile cache (with 16 entries by default),
-storing the data for the 16 most recently used tiles, so that queries which are
-geographically close to each other are fast, and to ensure memory usage doesn't
-grow unbounded.
+It has 3 subcommands:
 
-`surface`
----------
-
-`surface` is a simple executable tool which generates [OpenSCAD](http://www.openscad.org/)
-renders of the _Terrain 50_ data.
-
-It can directly generate an OpenSCAD render for a given grid-reference and radius:
-
-```
-$ ./surface -d /path/to/terrain_50_data -g SH6098654375 --xyscale 1:100000 --zscale 1:50000 --radius 5000 --output out.dat --scad out.scad
-```
+* `surface`: Generate a "surface" from a specified region of an elevation dataset,
+   e.g. as a CSV file.
+* `texture`: Generate an image from a specified region of a `raster` dataset.
+* `mesh`: Generate a 3D model, optionally with a texture, from a specified region
+   of elevation and raster datasets. e.g. as an STL or X3D file, suitable for
+   3D printing.
 
 ![Snowdon Summit (5 km radius)](surface.png)
 
-> Image above contains OS data © Crown Copyright (2021), used under the
+![Snowdon Summit, textured (5 km radius)](textured.png)
+
+> Images above contains OS data © Crown Copyright (2021), used under the
 > [Open Government License](http://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/)
