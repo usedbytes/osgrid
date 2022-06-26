@@ -39,12 +39,12 @@ func elevationFlag() *cli.StringFlag {
 	}
 }
 
-func rasterFlag() *cli.StringFlag {
+func rasterFlag(required bool) *cli.StringFlag {
 	return &cli.StringFlag{
 		Name:     "raster",
 		Aliases:  []string{"r"},
 		Usage:    "`PATH` to raster data (should contain 'data' folder)",
-		Required: true,
+		Required: required,
 		EnvVars:  []string{"OSMODEL_RASTER_DB"},
 	}
 }

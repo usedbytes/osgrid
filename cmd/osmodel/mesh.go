@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"encoding/xml"
 	"fmt"
+	"image/png"
 	"io"
 	"os"
 	"path"
@@ -14,8 +15,10 @@ import (
 
 	"github.com/usedbytes/osgrid"
 	"github.com/usedbytes/osgrid/lib/geometry"
+	"github.com/usedbytes/osgrid/lib/texture"
 	"github.com/usedbytes/osgrid/lib/x3d"
 	"github.com/usedbytes/osgrid/osdata"
+	"github.com/usedbytes/osgrid/osdata/raster"
 	"github.com/usedbytes/osgrid/osdata/terrain50"
 )
 
@@ -23,11 +26,13 @@ type MeshFormatter func(io.Writer, *geometry.Mesh) error
 
 type meshConfig struct {
 	elevationDB osdata.Float64Database
+	rasterDB    osdata.ImageDatabase
 	width       osgrid.Distance
 	outFile     io.WriteCloser
 	gridRef     osgrid.GridRef
 	formatter   MeshFormatter
 	meshOpts    []geometry.GenerateMeshOpt
+	textureOpts []texture.GenerateTextureOpt
 }
 
 func writeMeshSTL(w io.Writer, m *geometry.Mesh) error {
@@ -102,6 +107,22 @@ func writeMeshX3D(w io.Writer, m *geometry.Mesh) error {
 	}
 
 	x.Scene.Shape.IndexedFaceSet.CoordIndex = indices
+
+	if len(m.TexCoords) == len(m.Vertices) {
+		x.Scene.Shape.Appearance = &x3d.Appearance{
+			ImageTexture: &x3d.ImageTexture{
+				URL: "texture.png", // FIXME
+				TextureProperties: &x3d.TextureProperties{
+					BoundaryModeS: "CLAMP",
+					BoundaryModeT: "CLAMP",
+				},
+			},
+		}
+
+		x.Scene.Shape.IndexedFaceSet.TextureCoordinate = &x3d.TextureCoordinate{
+			Point: x3d.MFVec2f(m.TexCoords),
+		}
+	}
 
 	enc := xml.NewEncoder(w)
 	enc.Indent("", "\t")
@@ -224,6 +245,12 @@ func parseMeshArgs(c *cli.Context) (meshConfig, error) {
 		return meshConfig{}, fmt.Errorf("opening elevation database: %w", err)
 	}
 
+	// raster
+	cfg.rasterDB, err = raster.OpenDatabase(c.String("raster"), 10*osgrid.Kilometre)
+	if err != nil {
+		return meshConfig{}, fmt.Errorf("opening raster database: %w", err)
+	}
+
 	// GRID_REFERENCE
 	gridRef := snowdon
 	if c.NArg() > 0 {
@@ -274,6 +301,16 @@ func parseMeshArgs(c *cli.Context) (meshConfig, error) {
 		cfg.meshOpts = append(cfg.meshOpts, geometry.MeshWindingOpt(true))
 	}
 
+	if c.Bool("texture") {
+		if !c.IsSet("raster") {
+			return meshConfig{}, fmt.Errorf("texture requested but raster database not provided")
+		}
+
+		if format != "x3d" {
+			return meshConfig{}, fmt.Errorf("texturing only supported for X3D output")
+		}
+	}
+
 	success = true
 
 	return cfg, nil
@@ -289,6 +326,28 @@ func runMesh(c *cli.Context) error {
 	surface, err := geometry.GenerateSurface(cfg.elevationDB, cfg.gridRef, cfg.width, cfg.width)
 	if err != nil {
 		return fmt.Errorf("generating surface: %w", err)
+	}
+
+	if c.Bool("texture") {
+		tex, err := texture.GenerateTexture(cfg.rasterDB, cfg.gridRef, cfg.width, cfg.width, cfg.textureOpts...)
+		if err != nil {
+			return fmt.Errorf("generating texture: %w", err)
+		}
+
+		// FIXME:
+		f, err := os.Create("texture.png")
+		if err != nil {
+			return err
+		}
+		defer f.Close()
+
+		err = png.Encode(f, tex.Image)
+		if err != nil {
+			return err
+		}
+
+		texMap := texture.GenerateTextureMap(&tex, &surface)
+		cfg.meshOpts = append(cfg.meshOpts, geometry.MeshTextureCoordsOpt(texMap.TexCoords))
 	}
 
 	mesh := geometry.GenerateMesh(&surface, cfg.meshOpts...)
@@ -318,6 +377,14 @@ func vscaleFlag() *cli.StringFlag {
 	}
 }
 
+func textureFlag() *cli.BoolFlag {
+	return &cli.BoolFlag{
+		Name:    "texture",
+		Aliases: []string{"t"},
+		Usage:   "Apply a texture using 'raster' data",
+	}
+}
+
 var meshCmd cli.Command = cli.Command{
 	Name: "mesh",
 	Usage: "Generate a mesh from elevation data\n" +
@@ -328,8 +395,10 @@ var meshCmd cli.Command = cli.Command{
 		elevationFlag(),
 		formatsFlag([]string{"scad", "stl", "x3d"}),
 		hscaleFlag(),
-		vscaleFlag(),
 		outfileFlag(true),
+		rasterFlag(false),
+		textureFlag(),
+		vscaleFlag(),
 		widthFlag(),
 	},
 	Action: runMesh,

@@ -123,7 +123,7 @@ var textureCmd cli.Command = cli.Command{
 		"Default GRID_REFERENCE is Snowdon summit (" + snowdon + ")",
 	ArgsUsage: "GRID_REFERENCE",
 	Flags: []cli.Flag{
-		rasterFlag(),
+		rasterFlag(true),
 		formatsFlag([]string{"jpeg", "png"}),
 		outfileFlag(false),
 		widthFlag(),
