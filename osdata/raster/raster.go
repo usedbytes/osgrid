@@ -21,9 +21,10 @@ var mustBeImageTile osdata.ImageTile = &Tile{}
 var mustBeImageDatabase osdata.ImageDatabase = &Database{}
 
 type Tile struct {
-	bottomLeft    osgrid.GridRef
-	width, height osgrid.Distance
-	precision     osgrid.Distance
+	bottomLeft     osgrid.GridRef
+	width, height  osgrid.Distance
+	precision      osgrid.Distance
+	pixelPrecision int
 
 	image          image.Image
 	scaleX, scaleY float64
@@ -43,6 +44,10 @@ func (t *Tile) BottomLeft() osgrid.GridRef {
 
 func (t *Tile) Precision() osgrid.Distance {
 	return t.precision
+}
+
+func (t *Tile) PixelPrecision() int {
+	return t.pixelPrecision
 }
 
 func (t *Tile) Width() osgrid.Distance {
@@ -233,14 +238,35 @@ func OpenTile(path string) (*Tile, error) {
 		return nil, fmt.Errorf("tile size must be whole number of metres")
 	}
 
+	// Try and find integer Precision and PixelPrecision
+	// This is not a very good approach, but hopefully it works in practice.
+	// Better might be to determine the number of decimal digits required to
+	// represent ScaleX, then look for GCD(ScaleX*pow(10,digits), pow(10,digits))
+	pixelPrecision := 0
+	var precision osgrid.Distance
+	for i := 1; i < img.Bounds().Dy(); i++ {
+		mul := scaleTag.ScaleX * float64(i)
+		intg, frac := math.Modf(mul)
+		if float64(intg) == mul && frac == 0.0 {
+			pixelPrecision = i
+			precision = osgrid.Distance(intg)
+			break
+		}
+	}
+
+	if pixelPrecision == 0 {
+		return nil, fmt.Errorf("couldn't determine an integer Precision + PixelPrecision")
+	}
+
 	tile := &Tile{
 		width:  osgrid.Distance(widthInMetres) * osgrid.Metre,
 		height: osgrid.Distance(heightInMetres) * osgrid.Metre,
 		// FIXME: May need non-integer precision
-		precision: 1,
-		scaleX:    scaleTag.ScaleX,
-		scaleY:    scaleTag.ScaleY,
-		image:     img,
+		precision:      precision,
+		pixelPrecision: pixelPrecision,
+		scaleX:         scaleTag.ScaleX,
+		scaleY:         scaleTag.ScaleY,
+		image:          img,
 	}
 
 	// Tie point position is top-left, so subtract height
@@ -411,7 +437,7 @@ func OpenDatabase(path string, tileSize osgrid.Distance) (osdata.Database, error
 		d.precision = tile.Precision()
 	*/
 	// FIXME!
-	d.precision = 1
+	d.precision = 5
 
 	return d, nil
 }

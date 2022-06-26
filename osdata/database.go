@@ -34,6 +34,8 @@ type Float64Database interface {
 type ImageTile interface {
 	Tile
 	GetImage() image.Image
+	// Number of pixels per Precision()
+	PixelPrecision() int
 	GetPixelCoord(ref osgrid.GridRef) (int, int, error)
 }
 

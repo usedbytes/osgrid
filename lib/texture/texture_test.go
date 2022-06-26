@@ -19,10 +19,11 @@ type TestImageDatabase struct {
 }
 
 type TestImageTile struct {
-	color      color.Color
-	width      osgrid.Distance
-	precision  osgrid.Distance
-	bottomLeft osgrid.GridRef
+	color          color.Color
+	width          osgrid.Distance
+	precision      osgrid.Distance
+	pixelPrecision int
+	bottomLeft     osgrid.GridRef
 
 	img image.Image
 }
@@ -41,6 +42,10 @@ func (t *TestImageTile) BottomLeft() osgrid.GridRef {
 
 func (t *TestImageTile) Precision() osgrid.Distance {
 	return t.precision
+}
+
+func (t *TestImageTile) PixelPrecision() int {
+	return t.pixelPrecision
 }
 
 func (t *TestImageTile) Width() osgrid.Distance {
@@ -87,11 +92,12 @@ func (db *TestImageDatabase) GetImageTile(ref osgrid.GridRef) (osdata.ImageTile,
 	draw.Draw(img, img.Bounds(), image.NewUniform(color.RGBA{0, g, b, 0xff}), image.Pt(0, 0), draw.Over)
 
 	return &TestImageTile{
-		color:      color.RGBA{0, g, b, 0xff},
-		width:      db.tileSize,
-		precision:  1,
-		bottomLeft: ref,
-		img:        img,
+		color:          color.RGBA{0, g, b, 0xff},
+		width:          db.tileSize,
+		precision:      1,
+		pixelPrecision: 1,
+		bottomLeft:     ref,
+		img:            img,
 	}, nil
 }
 
