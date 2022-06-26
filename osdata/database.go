@@ -39,6 +39,12 @@ type ImageTile interface {
 	GetPixelCoord(ref osgrid.GridRef) (int, int, error)
 }
 
+// Convenience function for a common operation.
+// Will only give correct results if d is a multiple of t.Precision()!
+func DistanceToPixels(t ImageTile, d osgrid.Distance) int {
+	return int(d / t.Precision()) * t.PixelPrecision()
+}
+
 type ImageDatabase interface {
 	Database
 	GetImageTile(osgrid.GridRef) (ImageTile, error)

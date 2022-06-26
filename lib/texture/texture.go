@@ -4,7 +4,6 @@ import (
 	"image"
 	"image/draw"
 	"log"
-	"math"
 
 	"github.com/usedbytes/osgrid"
 	"github.com/usedbytes/osgrid/osdata"
@@ -39,16 +38,11 @@ func GenerateTexture(db osdata.ImageDatabase, centre osgrid.GridRef,
 		return Texture{}, err
 	}
 
-	// FIXME:
-	//scale := 2.5
-	scale := 1.0
+	numPixels := osdata.DistanceToPixels(tile, width)
 
-	pixelWidth := int(math.Round(float64((width)) / scale))
-	//downScale := 10
-	//pixelWidth /= downScale
-	canvas := image.NewRGBA(image.Rect(0, 0, pixelWidth, pixelWidth))
+	canvas := image.NewRGBA(image.Rect(0, 0, numPixels, numPixels))
 
-	drawnMinY := pixelWidth
+	drawnMinY := numPixels
 	drawnMaxX := 0
 
 	rowStart := bottomLeft
@@ -59,8 +53,8 @@ func GenerateTexture(db osdata.ImageDatabase, centre osgrid.GridRef,
 		log.Println("top rowStart:", rowStart)
 		coord := rowStart
 
-		for drawnMaxX < pixelWidth {
-			log.Println("drawnMaxX:", drawnMaxX, "pixelWidth:", pixelWidth)
+		for drawnMaxX < numPixels {
+			log.Println("drawnMaxX:", drawnMaxX, "numPixels:", numPixels)
 			log.Println("drawnMinY:", drawnMinY)
 			log.Println("coord:", coord)
 

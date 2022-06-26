@@ -14,8 +14,9 @@ import (
 )
 
 type TestImageDatabase struct {
-	resolution osgrid.Distance
-	tileSize   osgrid.Distance
+	precision      osgrid.Distance
+	pixelPrecision int
+	tileSize       osgrid.Distance
 }
 
 type TestImageTile struct {
@@ -65,17 +66,18 @@ func (t *TestImageTile) GetPixelCoord(ref osgrid.GridRef) (int, int, error) {
 		return -1, -1, fmt.Errorf("Coordinate outside tile")
 	}
 
-	if t.precision != 1 {
-		panic("TestImageTile only works for precision 1m")
-	}
-
 	ref = ref.Align(t.precision)
 
 	east := ref.TileEasting() - t.bottomLeft.TileEasting()
 	north := ref.TileNorthing() - t.bottomLeft.TileNorthing()
 
-	// Works for 1 pixel per metre.
-	return int(east), t.img.Bounds().Dy() - int(north), nil
+	blocksEast := int(east / t.precision)
+	blocksNorth := int(north / t.precision)
+
+	pixelsEast := blocksEast * t.pixelPrecision
+	pixelsNorth := blocksNorth * t.pixelPrecision
+
+	return pixelsEast, t.img.Bounds().Dy() - pixelsNorth, nil
 }
 
 func (db *TestImageDatabase) GetImageTile(ref osgrid.GridRef) (osdata.ImageTile, error) {
@@ -88,14 +90,16 @@ func (db *TestImageDatabase) GetImageTile(ref osgrid.GridRef) (osdata.ImageTile,
 	g := uint8(((eIdx % 5) + 1) * 50)
 	b := uint8((((nIdx + 3) % 5) + 1) * 50)
 
-	img := image.NewNRGBA(image.Rect(0, 0, int(db.tileSize), int(db.tileSize)))
+	pixelSize := int(db.tileSize/db.precision) * db.pixelPrecision
+
+	img := image.NewNRGBA(image.Rect(0, 0, pixelSize, pixelSize))
 	draw.Draw(img, img.Bounds(), image.NewUniform(color.RGBA{0, g, b, 0xff}), image.Pt(0, 0), draw.Over)
 
 	return &TestImageTile{
 		color:          color.RGBA{0, g, b, 0xff},
 		width:          db.tileSize,
-		precision:      1,
-		pixelPrecision: 1,
+		precision:      db.precision,
+		pixelPrecision: db.pixelPrecision,
 		bottomLeft:     ref,
 		img:            img,
 	}, nil
@@ -109,32 +113,32 @@ func (db *TestImageDatabase) Precision() osgrid.Distance {
 	return 1 * osgrid.Metre
 }
 
-func TestGenerateSingleTile(t *testing.T) {
-	db := &TestImageDatabase{
-		resolution: 1 * osgrid.Metre,
-		tileSize:   10 * osgrid.Metre,
-	}
+func testSingleTile(t *testing.T, db *TestImageDatabase) {
+	sizeMetres := db.tileSize
 
-	ref, err := osgrid.Origin().Add(5, 5)
+	ref, err := osgrid.Origin().Add(sizeMetres/2, sizeMetres/2)
 	if err != nil {
 		t.Fatal(err)
-	}
-
-	tex, err := GenerateTexture(db, ref, 10, 10)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	img := tex.Image
-
-	if img.Bounds().Dx() != 10 || img.Bounds().Dy() != 10 {
-		t.Errorf("bounds not correct, expected %v,%v got %v,%v", 10, 10, img.Bounds().Dx(), img.Bounds().Dy())
 	}
 
 	tile, err := db.GetImageTile(ref)
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	sizePixels := osdata.DistanceToPixels(tile, sizeMetres)
+
+	tex, err := GenerateTexture(db, ref, sizeMetres, sizeMetres)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	img := tex.Image
+
+	if img.Bounds().Dx() != sizePixels || img.Bounds().Dy() != sizePixels {
+		t.Errorf("bounds not correct, expected %v,%v got %v,%v", sizePixels, sizePixels, img.Bounds().Dx(), img.Bounds().Dy())
+	}
+
 	ttile := tile.(*TestImageTile)
 	er, eg, eb, _ := ttile.color.RGBA()
 
@@ -149,8 +153,8 @@ func TestGenerateSingleTile(t *testing.T) {
 		}
 	}
 
-	if t.Failed() {
-		f, err := os.Create("TestGenerateSingleTile.png")
+	if t.Failed() || testing.Verbose() {
+		f, err := os.Create(t.Name() + ".png")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -160,31 +164,45 @@ func TestGenerateSingleTile(t *testing.T) {
 	}
 }
 
-func TestGenerateMultiTile(t *testing.T) {
+func TestGenerateSingleTile(t *testing.T) {
 	db := &TestImageDatabase{
-		resolution: 1 * osgrid.Metre,
-		tileSize:   10 * osgrid.Metre,
+		precision:      1 * osgrid.Metre,
+		pixelPrecision: 1,
+		tileSize:       10 * osgrid.Metre,
 	}
 
-	ref, err := osgrid.Origin().Add(15, 15)
+	testSingleTile(t, db)
+}
+
+func testMultiTile(t *testing.T, db *TestImageDatabase) {
+	sizeMetres := db.tileSize * 3
+
+	ref, err := osgrid.Origin().Add(sizeMetres/2, sizeMetres/2)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	tex, err := GenerateTexture(db, ref, 30, 30)
+	tile, err := db.GetImageTile(ref)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	sizePixels := osdata.DistanceToPixels(tile, sizeMetres)
+
+	tex, err := GenerateTexture(db, ref, sizeMetres, sizeMetres)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	img := tex.Image
 
-	if img.Bounds().Dx() != 30 || img.Bounds().Dy() != 30 {
-		t.Errorf("bounds not correct, expected %v,%v got %v,%v", 30, 30, img.Bounds().Dx(), img.Bounds().Dy())
+	if img.Bounds().Dx() != sizePixels || img.Bounds().Dy() != sizePixels {
+		t.Errorf("bounds not correct, expected %v,%v got %v,%v", sizePixels, sizePixels, img.Bounds().Dx(), img.Bounds().Dy())
 	}
 
-	for south := osgrid.Distance(0); south < 30; south += 10 {
-		for east := osgrid.Distance(0); east < 30; east += 10 {
-			ref, err := osgrid.Origin().Add(east, 20-south)
+	for south := osgrid.Distance(0); south < sizeMetres; south += db.tileSize {
+		for east := osgrid.Distance(0); east < sizeMetres; east += db.tileSize {
+			ref, err := osgrid.Origin().Add(east, sizeMetres-south-db.tileSize)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -197,21 +215,22 @@ func TestGenerateMultiTile(t *testing.T) {
 			ttile := tile.(*TestImageTile)
 			er, eg, eb, _ := ttile.color.RGBA()
 
-			for y := 0; y < 10; y++ {
-				for x := 0; x < 10; x++ {
-					gr, gg, gb, _ := img.At(x+int(east), y+int(south)).RGBA()
+			for y := 0; y < osdata.DistanceToPixels(tile, db.tileSize); y++ {
+				for x := 0; x < osdata.DistanceToPixels(tile, db.tileSize); x++ {
+					tx, ty := osdata.DistanceToPixels(tile, east)+x, osdata.DistanceToPixels(tile, south)+y
+					gr, gg, gb, _ := img.At(tx, ty).RGBA()
 
 					if gr != er || gg != eg || gb != eb {
 						t.Errorf("color at (%v,%v) not correct, expected (%x,%x,%x) got (%x,%x,%x)",
-							x+int(east), y+int(south), er, eg, eb, gr, gg, gb)
+							tx, ty, er, eg, eb, gr, gg, gb)
 					}
 				}
 			}
 		}
 	}
 
-	if t.Failed() {
-		f, err := os.Create("TestGenerateMultiTile.png")
+	if t.Failed() || testing.Verbose() {
+		f, err := os.Create(t.Name() + ".png")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -219,4 +238,34 @@ func TestGenerateMultiTile(t *testing.T) {
 
 		png.Encode(f, img)
 	}
+}
+
+func TestGenerateMultiTile(t *testing.T) {
+	db := &TestImageDatabase{
+		precision:      1 * osgrid.Metre,
+		pixelPrecision: 1,
+		tileSize:       10 * osgrid.Metre,
+	}
+
+	testMultiTile(t, db)
+}
+
+func TestGenerateSingleTilePrecision(t *testing.T) {
+	db := &TestImageDatabase{
+		precision:      5 * osgrid.Metre,
+		pixelPrecision: 2,
+		tileSize:       10 * osgrid.Metre,
+	}
+
+	testSingleTile(t, db)
+}
+
+func TestGenerateMultiTilePrecision(t *testing.T) {
+	db := &TestImageDatabase{
+		precision:      5 * osgrid.Metre,
+		pixelPrecision: 2,
+		tileSize:       10 * osgrid.Metre,
+	}
+
+	testMultiTile(t, db)
 }
