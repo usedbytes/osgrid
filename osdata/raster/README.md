@@ -12,10 +12,9 @@ raster datasets, with no or minimal modification - I haven't tested that.
 This package provides a way to work with a raster dataset, querying images
 and pixel locations corresponding to grid references.
 
-The `raster.Database` object represents the data set. To use it, simply
-download the _Terrain 50_ "ASCII Grid" dataset, and extract it to a location. Use
-this location to open the database. The path should be to the directory _which
-contains the `data` directory_:
+To use it, download (all, or some of) the
+[OS VectorMap District](https://osdatahub.os.uk/downloads/open/VectorMapDistrict)
+data in "GeoTIFF Full Colour" format.
 
 ```
 package main

@@ -4,3 +4,4 @@
 * Automatic detection of database tile sizes
 * Test more raster formats
 * Determine what the data layout is for a _full_ raster dataset
+* Publish binaries

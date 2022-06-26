@@ -17,6 +17,42 @@ It has 3 subcommands:
    of elevation and raster datasets. e.g. as an STL or X3D file, suitable for
    3D printing.
 
+## Getting started
+
+Make sure you have `go` installed, any recent version should work (1.14+ maybe?)
+
+### Build/install
+
+Either:
+
+* Clone this repository
+* `cd osgrid/cmd/osmodel`
+* `go get .`
+* `go build .`
+* Run `./osmodel`
+
+Or:
+
+* Run `go install -v github.com/usedbytes/osgrid/cmd/osmodel@master`
+* Run `osmodel`, assuming your go binary directory is on your $PATH
+
+### Get some data
+
+Go to
+[OS OpenData](https://osdatahub.os.uk/downloads/open).
+and download some data.
+
+For elevation data, get
+[_Terrain 50_, "ASCII Grid"](https://osdatahub.os.uk/downloads/open/Terrain50).
+
+For raster data, I've used
+[OS VectorMap District](https://osdatahub.os.uk/downloads/open/VectorMapDistrict),
+"GeoTIFF Full Colour" successfully.
+
+Extract each of the zip files into their own directory and point the
+`--elevation` and/or `--raster` flags to those directories, _which should
+*contain* a folder called `data`_.
+
 ## `surface` subcommand
 
 The `surface` subcommand just outputs elevation data, using the
@@ -62,6 +98,9 @@ Output a viewable PNG representing a 5 km * 5 km area around Cheddar Gorge
 The `texture` subcommand outputs raster images, using the
 [`raster`](../../osdata/raster)
 package.
+
+The `OSMODEL_RASTER_DB` environment variable can be set to the raster
+data directory, or it can be passed as the `--raster` argument
 
 Example usage:
 
