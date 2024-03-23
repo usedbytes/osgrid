@@ -253,9 +253,15 @@ func parseMeshArgs(c *cli.Context) (meshConfig, error) {
 	}
 
 	// raster
-	cfg.rasterDB, err = raster.OpenDatabase(c.String("raster"), 10*osgrid.Kilometre)
-	if err != nil {
-		return meshConfig{}, fmt.Errorf("opening raster database: %w", err)
+	if c.Bool("texture") {
+		if c.String("raster") == "" {
+			return meshConfig{}, fmt.Errorf("--raster is required to generate textures")
+		}
+
+		cfg.rasterDB, err = raster.OpenDatabase(c.String("raster"), 10*osgrid.Kilometre)
+		if err != nil {
+			return meshConfig{}, fmt.Errorf("opening raster database: %w", err)
+		}
 	}
 
 	// GRID_REFERENCE
